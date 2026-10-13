@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raids — Character Sandbox</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <div id="loading">Loading assets…</div>
+  <div id="help">
+    <b>WASD</b> move · <b>Mouse</b> aim · <b>LMB</b> attack (hold to draw a bow) · <b>RMB</b> block (shield)
+    · <b>Space</b> dodge roll · <b>1-7</b> outfits · <b>T</b> trails · <b>G</b> hit arcs · <b>[ ]</b> slow-mo
+    · <b>Middle-drag</b> / <b>Alt+drag</b> orbit camera · <b>Q E</b> turn camera · <b>R</b> reset view · <b>Wheel</b> zoom
+  </div>
+  <div id="stats"></div>
+</div>
+<div id="panel"></div>
+<div id="floaters"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

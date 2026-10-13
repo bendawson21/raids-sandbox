@@ -1,0 +1,1346 @@
+{
+ "version": 1,
+ "fps": 30,
+ "styles": [
+  "lowpoly"
+ ],
+ "races": {
+  "human": {
+   "height": 1.87,
+   "height_ratio": 1.0,
+   "stride": 1.0,
+   "reach": 1.0,
+   "weapon_scale": 1.0,
+   "move_speed": 1.0,
+   "max_cadence": null,
+   "skin": null,
+   "files": {
+    "lowpoly": "characters/lowpoly.glb",
+    "anims": "characters/anims.glb"
+   },
+   "hair": [
+    "long",
+    "mohawk",
+    "short",
+    "topknot"
+   ],
+   "beard": [
+    "full",
+    "moustache"
+   ]
+  },
+  "dwarf": {
+   "height": 1.234,
+   "height_ratio": 0.66,
+   "stride": 0.562,
+   "reach": 0.7868,
+   "weapon_scale": 0.85,
+   "move_speed": 0.7,
+   "max_cadence": 1.15,
+   "skin": {
+    "skin": "#d9a27e",
+    "skin_dark": "#b18467",
+    "lip": "#ae745a"
+   },
+   "files": {
+    "lowpoly": "characters/lowpoly_dwarf.glb",
+    "anims": "characters/anims_dwarf.glb"
+   },
+   "hair": [
+    "long",
+    "mohawk",
+    "short",
+    "topknot"
+   ],
+   "beard": [
+    "full",
+    "moustache"
+   ]
+  },
+  "orc": {
+   "height": 2.244,
+   "height_ratio": 1.2,
+   "stride": 1.2055,
+   "reach": 1.4064,
+   "weapon_scale": 1.1,
+   "move_speed": 0.85,
+   "max_cadence": null,
+   "skin": {
+    "skin": "#6f9a4f",
+    "skin_dark": "#5b7e40",
+    "lip": "#616e38"
+   },
+   "files": {
+    "lowpoly": "characters/lowpoly_orc.glb",
+    "anims": "characters/anims_orc.glb"
+   },
+   "hair": [
+    "long",
+    "mohawk",
+    "short",
+    "topknot"
+   ],
+   "beard": [
+    "full"
+   ]
+  },
+  "elf": {
+   "height": 2.02,
+   "height_ratio": 1.08,
+   "stride": 1.1257,
+   "reach": 1.0938,
+   "weapon_scale": 1.0,
+   "move_speed": 1.0,
+   "max_cadence": null,
+   "skin": {
+    "skin": "#f0d2b8",
+    "skin_dark": "#c4ac96",
+    "lip": "#be9784"
+   },
+   "files": {
+    "lowpoly": "characters/lowpoly_elf.glb",
+    "anims": "characters/anims_elf.glb"
+   },
+   "hair": [
+    "long",
+    "mohawk",
+    "short",
+    "topknot"
+   ],
+   "beard": [
+    "full",
+    "moustache"
+   ]
+  },
+  "goblin": {
+   "height": 1.047,
+   "height_ratio": 0.56,
+   "stride": 0.5069,
+   "reach": 0.617,
+   "weapon_scale": 0.75,
+   "move_speed": 1.0,
+   "max_cadence": null,
+   "skin": {
+    "skin": "#9bb05a",
+    "skin_dark": "#7f9049",
+    "lip": "#817e40"
+   },
+   "files": {
+    "lowpoly": "characters/lowpoly_goblin.glb",
+    "anims": "characters/anims_goblin.glb"
+   },
+   "hair": [
+    "long",
+    "mohawk",
+    "short",
+    "topknot"
+   ],
+   "beard": [
+    "full",
+    "moustache"
+   ]
+  }
+ },
+ "roles": [
+  "skin",
+  "skin_dark",
+  "hair",
+  "eye",
+  "eye_white",
+  "cloth1",
+  "cloth2",
+  "cloth3",
+  "leather",
+  "leather_dark",
+  "team1",
+  "team2",
+  "team_trim",
+  "lip",
+  "spare14",
+  "spare15",
+  "steel",
+  "steel_dark",
+  "iron",
+  "iron_dark",
+  "gold",
+  "bronze",
+  "wood",
+  "wood_dark",
+  "fur",
+  "bone",
+  "string",
+  "straw",
+  "straw_dark",
+  "burlap",
+  "gem",
+  "black"
+ ],
+ "palettes": {
+  "hero": {
+   "skin": "#e9b48a",
+   "skin_dark": "#c98e66",
+   "hair": "#5a3a24",
+   "eye": "#2a2230",
+   "eye_white": "#f4efe6",
+   "cloth1": "#e8dcc0",
+   "cloth2": "#5b4e6e",
+   "cloth3": "#8a6d4a",
+   "leather": "#8c5a34",
+   "leather_dark": "#5a3a24",
+   "team1": "#c0392b",
+   "team2": "#f0c75e",
+   "team_trim": "#f4d27a",
+   "lip": "#b0705a"
+  },
+  "knight": {
+   "skin": "#f0c4a0",
+   "skin_dark": "#d29f7c",
+   "hair": "#d9b25f",
+   "eye": "#203048",
+   "eye_white": "#f4efe6",
+   "cloth1": "#dfe6f2",
+   "cloth2": "#33415e",
+   "cloth3": "#7b8aa8",
+   "leather": "#6e4b33",
+   "leather_dark": "#3e2a1e",
+   "team1": "#2e5fb8",
+   "team2": "#f2f2f2",
+   "team_trim": "#f0c75e",
+   "lip": "#c07c66"
+  },
+  "bandit": {
+   "skin": "#b98060",
+   "skin_dark": "#966247",
+   "hair": "#1e1a1a",
+   "eye": "#1a1414",
+   "eye_white": "#efe6dc",
+   "cloth1": "#6b5a4a",
+   "cloth2": "#2f2b2b",
+   "cloth3": "#7a2f2a",
+   "leather": "#5c3b29",
+   "leather_dark": "#2e1f18",
+   "team1": "#8e1f1f",
+   "team2": "#1d1d1d",
+   "team_trim": "#a88a4a",
+   "lip": "#8c5442"
+  },
+  "ranger": {
+   "skin": "#d9a27a",
+   "skin_dark": "#b88262",
+   "hair": "#a5482a",
+   "eye": "#24402a",
+   "eye_white": "#f4efe6",
+   "cloth1": "#8aa05a",
+   "cloth2": "#4e5a3a",
+   "cloth3": "#a08454",
+   "leather": "#8a6038",
+   "leather_dark": "#4f3520",
+   "team1": "#3f6b3a",
+   "team2": "#c9b47a",
+   "team_trim": "#d8c78f",
+   "lip": "#a8644e"
+  },
+  "peasant": {
+   "skin": "#efc6a2",
+   "skin_dark": "#d0a27e",
+   "hair": "#8a6a44",
+   "eye": "#3a2e2a",
+   "eye_white": "#f4efe6",
+   "cloth1": "#c9b28a",
+   "cloth2": "#7c6a50",
+   "cloth3": "#9b8a6a",
+   "leather": "#80603e",
+   "leather_dark": "#4f3a26",
+   "team1": "#9c8b5f",
+   "team2": "#d6c9a3",
+   "team_trim": "#b8a77a",
+   "lip": "#c08068"
+  },
+  "noble": {
+   "skin": "#7a5038",
+   "skin_dark": "#5e3c2a",
+   "hair": "#141214",
+   "eye": "#141214",
+   "eye_white": "#efe6dc",
+   "cloth1": "#efe2c4",
+   "cloth2": "#4a2a5e",
+   "cloth3": "#7a4a8e",
+   "leather": "#5c3b29",
+   "leather_dark": "#2e1f18",
+   "team1": "#6a2c8e",
+   "team2": "#f0c75e",
+   "team_trim": "#f0c75e",
+   "lip": "#5a3022"
+  }
+ },
+ "materials": {
+  "steel": "#b9c3cc",
+  "steel_dark": "#6f7b87",
+  "iron": "#7d8288",
+  "iron_dark": "#4a4e55",
+  "gold": "#e1b450",
+  "bronze": "#b5773c",
+  "wood": "#a0703f",
+  "wood_dark": "#6b4528",
+  "fur": "#d8c9ad",
+  "bone": "#efe6cf",
+  "string": "#ece3c8",
+  "straw": "#e0c46a",
+  "straw_dark": "#b8963e",
+  "burlap": "#c2a77a",
+  "gem": "#d8344a",
+  "black": "#25232a"
+ },
+ "skeleton": {
+  "bones": [
+   "root",
+   "hips",
+   "spine",
+   "chest",
+   "neck",
+   "head",
+   "clavicle_L",
+   "upperarm_L",
+   "forearm_L",
+   "hand_L",
+   "weapon_L",
+   "thigh_L",
+   "shin_L",
+   "foot_L",
+   "cape_1",
+   "cape_2",
+   "cape_3",
+   "clavicle_R",
+   "upperarm_R",
+   "forearm_R",
+   "hand_R",
+   "weapon_R",
+   "thigh_R",
+   "shin_R",
+   "foot_R"
+  ],
+  "sockets": {
+   "mainhand": "weapon_R",
+   "offhand": "weapon_L"
+  },
+  "upper": [
+   "spine",
+   "chest",
+   "neck",
+   "head",
+   "clavicle_L",
+   "upperarm_L",
+   "forearm_L",
+   "hand_L",
+   "weapon_L",
+   "clavicle_R",
+   "upperarm_R",
+   "forearm_R",
+   "hand_R",
+   "weapon_R"
+  ],
+  "left_arm": [
+   "clavicle_L",
+   "upperarm_L",
+   "forearm_L",
+   "hand_L",
+   "weapon_L"
+  ],
+  "procedural": [
+   "cape_1",
+   "cape_2",
+   "cape_3"
+  ]
+ },
+ "regions": [
+  "ears",
+  "feet",
+  "forearms",
+  "hands",
+  "head",
+  "hips",
+  "shins",
+  "thighs",
+  "torso",
+  "upperarms"
+ ],
+ "hair": [
+  "long",
+  "mohawk",
+  "short",
+  "topknot"
+ ],
+ "beard": [
+  "full",
+  "moustache"
+ ],
+ "items": {
+  "wpn_sword": {
+   "id": "wpn_sword",
+   "name": "Arming Sword",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.12,
+    0.92
+   ],
+   "reach": 1.3,
+   "tier": 2
+  },
+  "wpn_axe": {
+   "id": "wpn_axe",
+   "name": "Bearded Axe",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.5,
+    0.78
+   ],
+   "reach": 1.2,
+   "tier": 1
+  },
+  "wpn_mace": {
+   "id": "wpn_mace",
+   "name": "Flanged Mace",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.45,
+    0.68
+   ],
+   "reach": 1.15,
+   "tier": 2
+  },
+  "wpn_dagger": {
+   "id": "wpn_dagger",
+   "name": "Long Dagger",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.08,
+    0.5
+   ],
+   "reach": 0.95,
+   "tier": 1
+  },
+  "wpn_greatsword": {
+   "id": "wpn_greatsword",
+   "name": "Greatsword",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "2h",
+   "trail": [
+    0.25,
+    1.35
+   ],
+   "reach": 1.9,
+   "tier": 3
+  },
+  "wpn_greataxe": {
+   "id": "wpn_greataxe",
+   "name": "Executioner Axe",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "2h",
+   "trail": [
+    0.95,
+    1.2
+   ],
+   "reach": 1.8,
+   "tier": 3
+  },
+  "wpn_spear": {
+   "id": "wpn_spear",
+   "name": "Ash Spear",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "spear",
+   "trail": [
+    1.25,
+    1.6
+   ],
+   "reach": 2.3,
+   "tier": 2
+  },
+  "wpn_bow": {
+   "id": "wpn_bow",
+   "name": "Longbow",
+   "slot": "offhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "bow",
+   "tier": 2,
+   "string": [
+    [
+     0,
+     0.68,
+     -0.15
+    ],
+    [
+     0,
+     -0.68,
+     -0.15
+    ]
+   ],
+   "nock": [
+    0,
+    0.0,
+    -0.15
+   ]
+  },
+  "wpn_shortbow": {
+   "id": "wpn_shortbow",
+   "name": "Recurve Bow",
+   "slot": "offhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "bow",
+   "tier": 1,
+   "string": [
+    [
+     0,
+     0.47,
+     -0.08
+    ],
+    [
+     0,
+     -0.47,
+     -0.08
+    ]
+   ],
+   "nock": [
+    0,
+    0.0,
+    -0.08
+   ]
+  },
+  "proj_arrow": {
+   "id": "proj_arrow",
+   "name": "Arrow",
+   "slot": "projectile",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "projectile",
+   "tier": 0
+  },
+  "shield_round": {
+   "id": "shield_round",
+   "name": "Round Shield",
+   "slot": "offhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "shield",
+   "tier": 1
+  },
+  "shield_kite": {
+   "id": "shield_kite",
+   "name": "Kite Shield",
+   "slot": "offhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "shield",
+   "tier": 3
+  },
+  "shield_buckler": {
+   "id": "shield_buckler",
+   "name": "Buckler",
+   "slot": "offhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "shield",
+   "tier": 1
+  },
+  "wpn_sword_bronze": {
+   "id": "wpn_sword_bronze",
+   "name": "Bronze Sword",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.12,
+    0.92
+   ],
+   "reach": 1.3,
+   "tier": 1
+  },
+  "prop_dummy": {
+   "id": "prop_dummy",
+   "name": "Training Dummy",
+   "slot": "prop",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "prop",
+   "radius": 0.32,
+   "height": 1.85
+  },
+  "prop_dummy_stand": {
+   "id": "prop_dummy_stand",
+   "name": "Dummy Stand",
+   "slot": "prop",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "prop"
+  },
+  "prop_target": {
+   "id": "prop_target",
+   "name": "Archery Target",
+   "slot": "prop",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "prop",
+   "radius": 0.55,
+   "height": 1.2
+  }
+ },
+ "anims": {
+  "idle": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle"
+  },
+  "idle_1h": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_1h"
+  },
+  "idle_dual": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_dual"
+  },
+  "idle_2h": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_2h"
+  },
+  "idle_bow": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_bow"
+  },
+  "idle_spear": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_spear"
+  },
+  "idle_spear_shield": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_spear_shield"
+  },
+  "shield_carry": {
+   "length": 30,
+   "loop": true,
+   "duration": 1.0,
+   "layer": "left_arm"
+  },
+  "run": {
+   "length": 19,
+   "loop": true,
+   "duration": 0.6333333333333333,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "run_1h": {
+   "length": 17,
+   "loop": true,
+   "duration": 0.5666666666666667,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "run_dual": {
+   "length": 17,
+   "loop": true,
+   "duration": 0.5666666666666667,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "run_2h": {
+   "length": 17,
+   "loop": true,
+   "duration": 0.5666666666666667,
+   "cancel": 0,
+   "speed": 4.2
+  },
+  "run_bow": {
+   "length": 19,
+   "loop": true,
+   "duration": 0.6333333333333333,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "walk_guard": {
+   "length": 24,
+   "loop": true,
+   "duration": 0.8,
+   "cancel": 0,
+   "speed": 1.8,
+   "layer": "lower"
+  },
+  "dodge": {
+   "length": 21,
+   "loop": false,
+   "duration": 0.7,
+   "cancel": 18,
+   "lunge": 3.2,
+   "iframes": [
+    2,
+    15
+   ]
+  },
+  "run_spear": {
+   "length": 19,
+   "loop": true,
+   "duration": 0.6333333333333333,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "run_spear_shield": {
+   "length": 17,
+   "loop": true,
+   "duration": 0.5666666666666667,
+   "cancel": 0,
+   "speed": 4.6
+  },
+  "hit": {
+   "length": 16,
+   "loop": false,
+   "duration": 0.5333333333333333,
+   "cancel": 8,
+   "layer": "upper",
+   "lunge": 0.0,
+   "lunge_window": [
+    1,
+    3
+   ]
+  },
+  "death": {
+   "length": 46,
+   "loop": false,
+   "duration": 1.5333333333333334,
+   "clamp": true,
+   "lunge": 0.0,
+   "lunge_window": [
+    0,
+    2
+   ]
+  },
+  "idle_fists": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "cancel": 0,
+   "stance": "idle_fists"
+  },
+  "punch_1": {
+   "length": 14,
+   "loop": false,
+   "duration": 0.4666666666666667,
+   "hit": [
+    3,
+    6
+   ],
+   "combo": 6,
+   "cancel": 9,
+   "arc": [
+    20,
+    -20
+   ],
+   "reach": 0.75,
+   "stance": "idle_fists",
+   "lunge": 0.04,
+   "lunge_window": [
+    3,
+    8
+   ]
+  },
+  "punch_2": {
+   "length": 18,
+   "loop": false,
+   "duration": 0.6,
+   "hit": [
+    4,
+    7
+   ],
+   "combo": 8,
+   "cancel": 12,
+   "arc": [
+    10,
+    -30
+   ],
+   "reach": 0.8,
+   "stance": "idle_fists",
+   "lunge": 0.03,
+   "lunge_window": [
+    3,
+    10
+   ],
+   "enter": [
+    "punch_1",
+    7
+   ]
+  },
+  "punch_3": {
+   "length": 14,
+   "loop": false,
+   "duration": 0.4666666666666667,
+   "hit": [
+    3,
+    6
+   ],
+   "combo": 6,
+   "cancel": 9,
+   "arc": [
+    20,
+    -20
+   ],
+   "reach": 0.75,
+   "stance": "idle_fists",
+   "lunge": 0.04,
+   "lunge_window": [
+    3,
+    8
+   ],
+   "enter": [
+    "punch_2",
+    6
+   ]
+  },
+  "attack_1h_1": {
+   "length": 28,
+   "loop": false,
+   "duration": 0.9333333333333333,
+   "hit": [
+    8,
+    11
+   ],
+   "combo": 12,
+   "cancel": 18,
+   "arc": [
+    -65,
+    60
+   ],
+   "reach": 1.0,
+   "stance": "idle_1h",
+   "lunge": 0.33,
+   "lunge_window": [
+    5,
+    14
+   ]
+  },
+  "attack_1h_2": {
+   "length": 26,
+   "loop": false,
+   "duration": 0.8666666666666667,
+   "hit": [
+    7,
+    10
+   ],
+   "combo": 11,
+   "cancel": 16,
+   "arc": [
+    80,
+    -65
+   ],
+   "reach": 1.0,
+   "stance": "idle_1h",
+   "lunge": 0.58,
+   "lunge_window": [
+    4,
+    13
+   ],
+   "enter": [
+    "attack_1h_1",
+    13
+   ]
+  },
+  "attack_1h_3": {
+   "length": 34,
+   "loop": false,
+   "duration": 1.1333333333333333,
+   "hit": [
+    8,
+    21
+   ],
+   "combo": 25,
+   "cancel": 26,
+   "arc": [
+    -180,
+    180
+   ],
+   "reach": 1.1,
+   "spin": true,
+   "stance": "idle_1h",
+   "lunge": 0.98,
+   "lunge_window": [
+    3,
+    22
+   ],
+   "enter": [
+    "attack_1h_2",
+    12
+   ]
+  },
+  "block": {
+   "length": 30,
+   "loop": true,
+   "duration": 1.0,
+   "layer": "upper",
+   "cancel": 0
+  },
+  "block_start": {
+   "length": 6,
+   "loop": false,
+   "duration": 0.2,
+   "layer": "upper"
+  },
+  "shield_bash": {
+   "length": 20,
+   "loop": false,
+   "duration": 0.6666666666666666,
+   "hit": [
+    6,
+    9
+   ],
+   "combo": 12,
+   "cancel": 13,
+   "arc": [
+    25,
+    -25
+   ],
+   "reach": 0.9,
+   "knockback": 1.0,
+   "stance": "idle_1h",
+   "lunge": 0.42,
+   "lunge_window": [
+    5,
+    11
+   ]
+  },
+  "attack_dual_1": {
+   "length": 22,
+   "loop": false,
+   "duration": 0.7333333333333333,
+   "hit": [
+    6,
+    9
+   ],
+   "combo": 10,
+   "cancel": 14,
+   "reach": 0.95,
+   "stance": "idle_dual",
+   "arc": [
+    -60,
+    65
+   ],
+   "lunge": 0.36,
+   "lunge_window": [
+    3,
+    12
+   ]
+  },
+  "attack_dual_2": {
+   "length": 22,
+   "loop": false,
+   "duration": 0.7333333333333333,
+   "hit": [
+    6,
+    9
+   ],
+   "combo": 10,
+   "cancel": 14,
+   "reach": 0.95,
+   "stance": "idle_dual",
+   "arc": [
+    60,
+    -65
+   ],
+   "lunge": 0.28,
+   "lunge_window": [
+    5,
+    12
+   ],
+   "enter": [
+    "attack_dual_1",
+    12
+   ]
+  },
+  "attack_dual_3": {
+   "length": 30,
+   "loop": false,
+   "duration": 1.0,
+   "hit": [
+    9,
+    12
+   ],
+   "combo": 15,
+   "cancel": 19,
+   "arc": [
+    -90,
+    90
+   ],
+   "reach": 1.0,
+   "both": true,
+   "stance": "idle_dual",
+   "lunge": 0.0,
+   "lunge_window": [
+    7,
+    9
+   ],
+   "enter": [
+    "attack_dual_2",
+    12
+   ]
+  },
+  "attack_2h_1": {
+   "length": 32,
+   "loop": false,
+   "duration": 1.0666666666666667,
+   "hit": [
+    11,
+    15
+   ],
+   "combo": 17,
+   "cancel": 22,
+   "lunge": 0.6,
+   "lunge_window": [
+    7,
+    15
+   ],
+   "arc": [
+    -118,
+    70
+   ],
+   "reach": 1.0,
+   "stance": "idle_2h",
+   "overlap": {
+    "hips_rot": -1,
+    "neck": 1,
+    "head": 2
+   }
+  },
+  "attack_2h_2": {
+   "length": 30,
+   "loop": false,
+   "duration": 1.0,
+   "hit": [
+    9,
+    13
+   ],
+   "combo": 15,
+   "cancel": 20,
+   "lunge": 0.5,
+   "lunge_window": [
+    5,
+    13
+   ],
+   "arc": [
+    60,
+    -80
+   ],
+   "reach": 1.0,
+   "stance": "idle_2h",
+   "enter": [
+    "attack_2h_1",
+    18
+   ],
+   "overlap": {
+    "hips_rot": -1,
+    "neck": 1,
+    "head": 2
+   }
+  },
+  "attack_2h_3": {
+   "length": 38,
+   "loop": false,
+   "duration": 1.2666666666666666,
+   "hit": [
+    11,
+    14
+   ],
+   "combo": 28,
+   "cancel": 29,
+   "lunge": 0.6,
+   "lunge_window": [
+    7,
+    14
+   ],
+   "arc": [
+    -45,
+    20
+   ],
+   "reach": 1.25,
+   "slam": true,
+   "shake": 0.35,
+   "stance": "idle_2h",
+   "enter": [
+    "attack_2h_2",
+    16
+   ],
+   "overlap": {
+    "hips_rot": -1,
+    "neck": 1,
+    "head": 2
+   }
+  },
+  "bow_draw": {
+   "length": 14,
+   "loop": false,
+   "duration": 0.4666666666666667,
+   "layer": "upper",
+   "full": 11
+  },
+  "bow_aim": {
+   "length": 40,
+   "loop": true,
+   "duration": 1.3333333333333333,
+   "layer": "upper",
+   "cancel": 0
+  },
+  "bow_release": {
+   "length": 16,
+   "loop": false,
+   "duration": 0.5333333333333333,
+   "layer": "upper",
+   "release": 0,
+   "cancel": 6
+  },
+  "bow_stance": {
+   "length": 60,
+   "loop": true,
+   "duration": 2.0,
+   "layer": "lower",
+   "cancel": 0
+  },
+  "bow_walk": {
+   "length": 24,
+   "loop": true,
+   "duration": 0.8,
+   "cancel": 0,
+   "speed": 1.8,
+   "layer": "lower"
+  },
+  "attack_spear_1": {
+   "length": 26,
+   "loop": false,
+   "duration": 0.8666666666666667,
+   "hit": [
+    8,
+    11
+   ],
+   "combo": 12,
+   "cancel": 18,
+   "arc": [
+    15,
+    -15
+   ],
+   "reach": 1.0,
+   "stance": "idle_spear",
+   "lunge": 0.43,
+   "lunge_window": [
+    6,
+    13
+   ]
+  },
+  "attack_spear_2": {
+   "length": 28,
+   "loop": false,
+   "duration": 0.9333333333333333,
+   "hit": [
+    8,
+    12
+   ],
+   "combo": 13,
+   "cancel": 19,
+   "arc": [
+    20,
+    -105
+   ],
+   "reach": 0.95,
+   "stance": "idle_spear",
+   "lunge": 0.53,
+   "lunge_window": [
+    6,
+    11
+   ],
+   "enter": [
+    "attack_spear_1",
+    13
+   ]
+  },
+  "attack_spear_3": {
+   "length": 34,
+   "loop": false,
+   "duration": 1.1333333333333333,
+   "hit": [
+    10,
+    14
+   ],
+   "combo": 26,
+   "cancel": 27,
+   "arc": [
+    15,
+    -15
+   ],
+   "reach": 1.15,
+   "stance": "idle_spear",
+   "lunge": 0.78,
+   "lunge_window": [
+    8,
+    17
+   ],
+   "enter": [
+    "attack_spear_2",
+    14
+   ]
+  },
+  "attack_spsh_1": {
+   "length": 26,
+   "loop": false,
+   "duration": 0.8666666666666667,
+   "stance": "idle_spear_shield",
+   "hit": [
+    8,
+    11
+   ],
+   "combo": 12,
+   "cancel": 18,
+   "arc": [
+    15,
+    -15
+   ],
+   "reach": 1.0,
+   "lunge": 0.43,
+   "lunge_window": [
+    6,
+    13
+   ]
+  },
+  "attack_spsh_2": {
+   "length": 22,
+   "loop": false,
+   "duration": 0.7333333333333333,
+   "stance": "idle_spear_shield",
+   "hit": [
+    6,
+    9
+   ],
+   "combo": 10,
+   "cancel": 14,
+   "arc": [
+    20,
+    -10
+   ],
+   "reach": 1.0,
+   "lunge": 0.43,
+   "lunge_window": [
+    4,
+    11
+   ],
+   "enter": [
+    "attack_spsh_1",
+    12
+   ]
+  },
+  "attack_spsh_3": {
+   "length": 34,
+   "loop": false,
+   "duration": 1.1333333333333333,
+   "stance": "idle_spear_shield",
+   "hit": [
+    10,
+    14
+   ],
+   "combo": 26,
+   "cancel": 27,
+   "arc": [
+    15,
+    -15
+   ],
+   "reach": 1.15,
+   "lunge": 0.78,
+   "lunge_window": [
+    8,
+    17
+   ],
+   "enter": [
+    "attack_spsh_2",
+    11
+   ]
+  }
+ },
+ "loadouts": {
+  "peasant": {
+   "palette": "peasant",
+   "hair": "short",
+   "beard": "moustache",
+   "items": []
+  },
+  "ranger": {
+   "palette": "ranger",
+   "hair": "long",
+   "items": [],
+   "offhand": "wpn_bow"
+  },
+  "knight": {
+   "palette": "knight",
+   "hair": "short",
+   "items": [],
+   "mainhand": "wpn_sword",
+   "offhand": "shield_kite"
+  },
+  "warlord": {
+   "palette": "bandit",
+   "hair": "mohawk",
+   "beard": "full",
+   "items": [],
+   "mainhand": "wpn_greataxe"
+  },
+  "mage": {
+   "palette": "noble",
+   "hair": "topknot",
+   "beard": "full",
+   "items": [],
+   "mainhand": "wpn_dagger"
+  },
+  "bandit": {
+   "palette": "bandit",
+   "hair": "short",
+   "items": [],
+   "mainhand": "wpn_axe",
+   "offhand": "wpn_dagger"
+  },
+  "noble": {
+   "palette": "hero",
+   "hair": "short",
+   "items": [],
+   "mainhand": "wpn_greatsword"
+  }
+ }
+}
