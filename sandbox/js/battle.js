@@ -55,9 +55,17 @@ const corners = FACTIONS.map((_, i) => {
   return new THREE.Vector3(Math.sin(a) * ARENA, 0, Math.cos(a) * ARENA);
 });
 
+// phones / tablets: a lighter render (no shadows, 1x pixels) - 100 skinned soldiers
+const TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
 class BattleGame extends Game {
   buildWorld() {
     this.dummies = [];
+    if (TOUCH) {
+      this.renderer.setPixelRatio(1);
+      this.renderer.shadowMap.enabled = false;
+      this.sun.castShadow = false;
+    }
     this.quiet = true;                       // no damage numbers / hit-stop / camera shake
     this.showTrails = false;
     this.camMax = 95;
@@ -107,6 +115,12 @@ class BattleGame extends Game {
 const game = new BattleGame(assets, document.getElementById('app'));
 window.game = game;
 game.player = null;
+// the whole arena in view: further back on a narrow (portrait) screen
+const homeDist = () => 62 * Math.max(1, 0.95 / game.camera.aspect);
+game.camMax = Math.max(95, homeDist() * 1.25);
+game.camDist = homeDist();
+game.camera.far = Math.max(400, homeDist() * 3); game.camera.updateProjectionMatrix();
+game.scene.fog.far = Math.max(200, homeDist() * 2.5);
 
 // keep everyone inside the pentagon
 const inward = corners.map((a, i) => {
@@ -363,9 +377,74 @@ function frame(now) {
 }
 game.onKey = e => {
   if (e.code === 'KeyP') game.paused = !game.paused;
-  if (e.code === 'KeyR') { game.camTarget.set(0, 0, 0); game.camDist = 62; game.camYaw = 0; }
+  if (e.code === 'KeyR') { game.camTarget.set(0, 0, 0); game.camDist = homeDist(); game.camYaw = 0; }
   if (e.code === 'BracketRight') game.timeScale = Math.min(2, game.timeScale * 2);
   if (e.code === 'BracketLeft') game.timeScale = Math.max(0.25, game.timeScale / 2);
 };
+// ---------------------------------------------------------------- touch controls
+// one finger: pan · two fingers: pinch zoom, twist orbit, drag up / down to tilt
+const canvas = game.renderer.domElement;
+canvas.style.touchAction = 'none';
+const touches = new Map();
+let gesture = null;
+function panBy(dx, dy) {
+  const k = game.camDist * 0.0022;
+  const v = new THREE.Vector3(-dx * k, 0, -dy * k / Math.max(0.35, Math.sin(game.camPitch)));
+  game.camTarget.add(v.applyAxisAngle(new THREE.Vector3(0, 1, 0), game.camYaw));
+}
+function twoFinger() {
+  const [a, b] = [...touches.values()];
+  return { d: Math.hypot(a.x - b.x, a.y - b.y), ang: Math.atan2(b.y - a.y, b.x - a.x), y: (a.y + b.y) / 2 };
+}
+canvas.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;
+  try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* synthetic / stale pointer */ }
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  gesture = touches.size === 2 ? twoFinger() : null;
+});
+canvas.addEventListener('pointermove', e => {
+  if (e.pointerType !== 'touch' || !touches.has(e.pointerId)) return;
+  const t = touches.get(e.pointerId);
+  const dx = e.clientX - t.x, dy = e.clientY - t.y;
+  t.x = e.clientX; t.y = e.clientY;
+  if (touches.size === 1) panBy(dx, dy);
+  else if (touches.size === 2 && gesture) {
+    const g = twoFinger();
+    game.camDist = THREE.MathUtils.clamp(game.camDist * gesture.d / Math.max(1, g.d), 7, game.camMax);
+    let da = g.ang - gesture.ang;
+    if (da > Math.PI) da -= 2 * Math.PI; if (da < -Math.PI) da += 2 * Math.PI;
+    game.camYaw -= da;
+    game.camPitch = THREE.MathUtils.clamp(game.camPitch + (g.y - gesture.y) * 0.004,
+      THREE.MathUtils.degToRad(15), THREE.MathUtils.degToRad(85));
+    gesture = g;
+  }
+});
+const lift = e => { touches.delete(e.pointerId); gesture = touches.size === 2 ? twoFinger() : null; };
+canvas.addEventListener('pointerup', lift);
+canvas.addEventListener('pointercancel', lift);
+
+// on-screen buttons (handy with a mouse too)
+const bar = document.createElement('div');
+bar.id = 'battlebar';
+const btn = (label, title, fn) => {
+  const b = document.createElement('button');
+  b.textContent = label; b.title = title;
+  b.addEventListener('click', e => { e.stopPropagation(); fn(b); });
+  bar.appendChild(b);
+  return b;
+};
+btn('Reset view', 'R', () => { game.camTarget.set(0, 0, 0); game.camDist = homeDist(); game.camYaw = 0; game.camPitch = THREE.MathUtils.degToRad(58); });
+const pauseBtn = btn('Pause', 'P', b => { game.paused = !game.paused; b.textContent = game.paused ? 'Play' : 'Pause'; });
+const speedLbl = document.createElement('span');
+btn('Slower', '[', () => { game.timeScale = Math.max(0.25, game.timeScale / 2); speedLbl.textContent = `x${game.timeScale}`; });
+speedLbl.textContent = 'x1'; bar.appendChild(speedLbl);
+btn('Faster', ']', () => { game.timeScale = Math.min(2, game.timeScale * 2); speedLbl.textContent = `x${game.timeScale}`; });
+document.body.appendChild(bar);
+if (TOUCH) document.getElementById('help').innerHTML =
+  '<b>Battle sim</b> · <b>drag</b> pan · <b>pinch</b> zoom · <b>twist</b> orbit · <b>two-finger drag</b> tilt' +
+  ' · <a href="index.html" style="color:#e3b552;pointer-events:auto">sandbox</a>';
+const _onKey = game.onKey;
+game.onKey = e => { _onKey(e); pauseBtn.textContent = game.paused ? 'Play' : 'Pause'; speedLbl.textContent = `x${game.timeScale}`; };
+
 window.battle = { sim, FACTIONS, spawnUnit, simTick };
 requestAnimationFrame(frame);

@@ -2,9 +2,22 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Raids — Battle Sim</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  #battlebar { position: fixed; left: 50%; bottom: 14px; transform: translateX(-50%); display: flex; gap: 6px;
+    align-items: center; background: rgba(0,0,0,0.45); padding: 6px 8px; border-radius: 10px; }
+  #battlebar button { padding: 8px 12px; font-size: 14px; }
+  #battlebar span { color: #e3b552; font: 13px ui-monospace, Consolas, monospace; min-width: 38px; text-align: center; }
+  @media (max-width: 700px) {
+    #hud { left: 6px; top: 6px; }
+    #help { font-size: 11px; padding: 4px 8px; }
+    #stats { font-size: 10px; }
+    #battlebar { bottom: max(10px, env(safe-area-inset-bottom)); }
+    #battlebar button { padding: 10px 10px; font-size: 13px; }
+  }
+</style>
 <script type="importmap">
 {
   "imports": {
