@@ -14,12 +14,14 @@ export const STANCES = {
   '2h': { idle: 'idle_2h', run: 'run_2h', combo: ['attack_2h_1', 'attack_2h_2', 'attack_2h_3'] },
   bow: { idle: 'idle_bow', run: 'run_bow', combo: [] },
   crossbow: { idle: 'idle_xbow', run: 'run_xbow', combo: [] },
+  sling: { idle: 'idle_sling', run: 'run_1h', combo: [] },          // the goblin's sling: whirl + cast (actor)
   spear: { idle: 'idle_spear', run: 'run_spear', combo: ['attack_spear_1', 'attack_spear_2', 'attack_spear_3'] },
   spear_shield: { idle: 'idle_spear_shield', run: 'run_spear_shield', combo: ['attack_spsh_1', 'attack_spsh_2', 'attack_spsh_3'] },
 };
 
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _q = new THREE.Quaternion();
 const Y = new THREE.Vector3(0, 1, 0);
+const DOWN = new THREE.Vector3(0, -1, 0);
 
 export class Character {
   constructor(assets, loadout = {}, style = 'lowpoly') {
@@ -113,6 +115,7 @@ export class Character {
     if (o && o.kind === 'bow') return 'bow';
     if (!m) return 'fists';
     if (m.kind === 'crossbow') return 'crossbow';
+    if (m.kind === 'sling') return 'sling';
     if (m.kind === 'spear') return this.hasShield ? 'spear_shield' : 'spear';
     if (m.kind === '2h') return '2h';
     if (o && o.kind === '1h') return 'dual';
@@ -152,6 +155,7 @@ export class Character {
     for (const s of WEAPON_SLOTS) {
       if (this.weapons[s]) { this.weapons[s].removeFromParent(); this.weapons[s] = null; }
     }
+    if (this.sling) { this.sling.pivot.removeFromParent(); this.sling = null; }
     const lib = this.assets.lib(this.style, this.race);
     const ws = this.raceInfo.weapon_scale || 1;
     for (const s of WEAPON_SLOTS) {
@@ -161,14 +165,23 @@ export class Character {
       m.material = this.material;
       // glTF keeps bone-local axes as authored in Blender (Z-up) while mesh data is
       // converted to Y-up, so undo that conversion for meshes parented to bones.
-      m.position.set(0, 0, 0); m.rotation.set(Math.PI / 2, 0, 0); m.scale.setScalar(ws);
+      // the sling scales with the body's height (item meta height_scale), not the weapon factor
+      const hs = this.item(id) && this.item(id).height_scale;
+      const wsi = hs ? (this.raceInfo.height_ratio || 1) * hs : ws;
+      m.position.set(0, 0, 0); m.rotation.set(Math.PI / 2, 0, 0); m.scale.setScalar(wsi);
       // a strapped shield's back must clear the race's forearm + sleeve (catalog races.*.forearm_clear)
       const it0 = this.item(id);
       if (it0 && it0.back != null) m.position.x = Math.max(0, (this.raceInfo.forearm_clear || 0) - it0.back * ws);
       m.castShadow = true;
-      this.bones[s === 'mainhand' ? 'weapon_R' : 'weapon_L'].add(m);
-      this.weapons[s] = m;
       const it = this.item(id);
+      if (it.kind === 'sling') {
+        // a pivot between the hand and the sling: its physics swings it (updateSling)
+        const pivot = new THREE.Group();
+        this.bones.weapon_R.add(pivot);
+        pivot.add(m);
+        this.sling = { pivot, L: 0.46 * wsi, X: null, P: null, w: 1 };
+      } else this.bones[s === 'mainhand' ? 'weapon_R' : 'weapon_L'].add(m);
+      this.weapons[s] = m;
       if (it.kind === 'bow') this.makeBowString(m, it);
       if (it.kind === 'crossbow') this.makeXbowString(m, this.itemMeta(id));
     }
@@ -277,8 +290,65 @@ export class Character {
   // ------------------------------------------------------------- per frame
   update(dt) {
     this.mixer.update(dt * this.animSpeed);
+    this.updateStruggle(dt);
     this.model.updateMatrixWorld(true);
+    this.updateSling(dt);
     this.updateBowString();
+  }
+
+  // the sling's physics (owner: stiff in idle and the run): the pouch is one point on a
+  // cord from the fist, swinging under gravity (verlet + the cord length), and the sling
+  // is turned to point at it.  The whirl and the cast (sling_* clips on the upper slot)
+  // drive it from the animation instead; the hand-over blends.  One point per unit: cheap.
+  updateSling(dt) {
+    const S = this.sling;
+    if (!S || dt <= 0) return;
+    const bone = this.bones.weapon_R;
+    const up = this.slots.upper;
+    const want = up && up.name && up.name.startsWith('sling_') ? 0 : 1;
+    S.w += (want - S.w) * Math.min(1, dt * 12);
+    const P = bone.getWorldPosition(_v);
+    bone.getWorldQuaternion(_q);
+    if (S.w < 0.02 || !S.X) {
+      // animated (or first frame): follow the clip's cord (bone -Y)
+      const cord = _v2.set(0, -1, 0).applyQuaternion(_q).multiplyScalar(S.L);
+      S.X = (S.X || new THREE.Vector3()).copy(P).add(cord);
+      S.P = (S.P || new THREE.Vector3()).copy(S.X);
+      S.pivot.quaternion.identity();
+      return;
+    }
+    // verlet: carry on, fall, damp; then hold the cord's length; keep it off the ground
+    const h = Math.min(dt, 1 / 30);
+    const nx = S.X.x + (S.X.x - S.P.x) * 0.955, ny = S.X.y + (S.X.y - S.P.y) * 0.955 - 9.8 * h * h,
+      nz = S.X.z + (S.X.z - S.P.z) * 0.955;
+    S.P.copy(S.X);
+    S.X.set(nx, ny, nz).sub(P).setLength(S.L).add(P);
+    if (S.X.y < 0.03) S.X.y = 0.03;
+    // turn the sling (its cord: bone -Y) toward the pouch, in the bone's frame
+    const d = _v2.copy(S.X).sub(P).normalize().applyQuaternion(_q.invert());
+    const q = new THREE.Quaternion().setFromUnitVectors(DOWN, d);
+    S.pivot.quaternion.identity().slerp(q, S.w);
+  }
+
+  // the orc's captive wheel (item meta struggle): its goblin strains against the ropes -
+  // two shape keys blended either way, in quiet pauses (a slow small writhe) and thrashing
+  // fits (fast, full), each a random length
+  updateStruggle(dt) {
+    const id = this.loadout.back, it = id && this.item(id);
+    if (!it || !it.struggle) return;
+    const m = this.meshes[id];
+    if (!m || !m.visible || !m.morphTargetDictionary) return;
+    const S = this.struggle || (this.struggle = { p: Math.random() * 6, a: 0, fit: false, left: 0.5 + Math.random() * 2 });
+    if ((S.left -= dt) <= 0) {
+      S.fit = !S.fit;
+      S.left = S.fit ? 0.6 + Math.random() * 1.1 : 1.2 + Math.random() * 2.6;
+      S.freq = 8 + Math.random() * 7;
+    }
+    S.a += ((S.fit ? 1 : 0.2) - S.a) * Math.min(1, dt * 6);
+    S.p += dt * (S.fit ? S.freq : 2.0);
+    const v = Math.sin(S.p) * S.a, inf = m.morphTargetInfluences, d = m.morphTargetDictionary;
+    if (d.struggle_a !== undefined) inf[d.struggle_a] = Math.max(0, v);
+    if (d.struggle_b !== undefined) inf[d.struggle_b] = Math.max(0, -v);
   }
 
   updateBowString() {

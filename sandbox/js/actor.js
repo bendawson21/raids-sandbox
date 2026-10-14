@@ -86,6 +86,7 @@ export class Actor {
     const c = this.char;
     this.stateT += dt;
     const moving = input.move.lengthSq() > 0.01;
+    if (this.jetCd > 0) this.jetCd -= dt;
     switch (this.state) {
       case 'move': this.updateMove(dt, input, moving); break;
       case 'attack': this.updateAttack(dt, input, moving); break;
@@ -93,9 +94,12 @@ export class Actor {
       case 'aim': this.updateAim(dt, input, moving); break;
       case 'release': this.updateRelease(dt, input, moving); break;
       case 'xaim': this.updateXAim(dt, input, moving); break;
+      case 'swhirl': this.updateWhirl(dt, input, moving); break;
+      case 'sthrow': this.updateThrow(dt, input, moving); break;
       case 'xshoot': this.updateXShoot(dt, input, moving); break;
       case 'reload': this.updateReload(dt, input, moving); break;
       case 'dodge': this.updateDodge(dt, input, moving); break;
+      case 'jet': this.updateJet(dt, input, moving); break;
       case 'dead': this.updateDead(dt); break;
       case 'preview': {
         // show the clip's lunge as a visual offset (resets every loop) so planted feet read as planted
@@ -119,6 +123,8 @@ export class Actor {
         if (this.state === 'move') this.applyLocomotion(this.vel.length());
       }
     }
+    // killed (or knocked out of the jet) mid-air: drop to the ground
+    if (this.state !== 'jet' && this.air > 0) this.air = Math.max(0, this.air - 9 * dt);
     // integrate
     this.pos.addScaledVector(this.vel, dt);
     this.game.collide(this);
@@ -132,6 +138,7 @@ export class Actor {
     if (input.dodge) return this.startDodge(input);
     if (c.stance === 'bow' && input.attack) return this.startAim();
     if (c.stance === 'crossbow' && input.attack) return c.xbowLoaded ? this.startXAim() : this.startReload();
+    if (c.stance === 'sling' && input.attack) return this.startWhirl();
     if (input.block && c.hasShield) return this.startBlock();
     if (input.attack && this.st().combo.length) return this.startAttack(0, input);
     const speed = 4.6 * c.moveSpeed;
@@ -318,6 +325,60 @@ export class Actor {
     }
   }
 
+  // ------------------------------------------------------------------ sling
+  // hold to whirl it overhead (sling_whirl, upper body: walkable, slowly), release to cast
+  // (sling_throw): the stone goes at the clip's release frame, from the hand
+  startWhirl() {
+    this.setState('swhirl');
+    this.char.setSlot('upper', 'sling_whirl', { mask: 'upper', fade: 0.12 });
+    this.applyLocomotion(0, true);
+  }
+
+  updateWhirl(dt, input, moving) {
+    const c = this.char;
+    if (input.dodge) { c.setSlot('upper', null); return this.startDodge(input); }
+    const target = new THREE.Vector3(input.move.x, 0, input.move.y).multiplyScalar(2.2 * c.moveSpeed);
+    this.vel.lerp(target, 1 - Math.exp(-12 * dt));
+    this.faceAim(input, dt, 12);
+    this.applyLocomotion(this.vel.length(), true);
+    if (!input.attackHeld) {
+      if (this.stateT > 0.35) {                     // wound up enough: cast
+        this.setState('sthrow');
+        this.stoneOut = false;
+        this.throwAim = input.aim ? input.aim.clone() : null;
+        c.setSlot('upper', 'sling_throw', { mask: 'upper', once: true, restart: true, fade: 0.04 });
+      } else { c.setSlot('upper', null, { fade: 0.15 }); this.setState('move'); this.applyLocomotion(0); }
+    }
+  }
+
+  updateThrow(dt, input, moving) {
+    const c = this.char, m = this.game.assets.meta('sling_throw');
+    const t = c.slots.upper ? c.slots.upper.action.time : 1;
+    this.vel.multiplyScalar(Math.exp(-10 * dt));
+    this.faceAim(input, dt, 10);
+    this.applyLocomotion(this.vel.length(), true);
+    if (!this.stoneOut && t * FPS >= (m.release || 5)) {
+      this.stoneOut = true;
+      const from = new THREE.Vector3();
+      c.bones.weapon_R.getWorldPosition(from);
+      from.addScaledVector(this.forward, 0.3);
+      from.y += 0.1;
+      let dir = this.forward;
+      const aim = this.throwAim || input.aim;
+      if (aim) {
+        const d = new THREE.Vector3(aim.x - from.x, 0, aim.z - from.z);
+        if (d.lengthSq() > 0.25) dir = d.normalize();
+      }
+      this.game.spawnArrow(this, from, dir, { mesh: 'proj_stone', speed: 24, lift: 2.2, dmg: [12, 18] });
+    }
+    if (t * FPS >= (m.cancel || 9) && input.attack) return this.startWhirl();
+    if (t >= m.duration - 0.02 || (t * FPS > (m.cancel || 9) && moving)) {
+      c.setSlot('upper', null, { fade: 0.2 });
+      this.setState('move');
+      this.applyLocomotion(this.vel.length());
+    }
+  }
+
   // ------------------------------------------------------------------ crossbow
   // hold to raise and aim, release to loose; then it spans itself (xbow_reload, upper
   // body: walkable at a crawl) - the string follows the left hand over meta.pull
@@ -420,6 +481,11 @@ export class Actor {
   }
 
   updateDodge(dt, input, moving) {
+    if (this.rollOut !== undefined) {
+      const k = smooth01(this.stateT / 0.12);
+      this.setSpin(this.rollOut * (1 - k), 0);
+      if (k >= 1) { this.setSpin(0, 0); this.rollOut = undefined; }
+    }
     const m = this.game.assets.meta('dodge');
     const a = this.char.slots.base.action;
     const f = a.time * FPS;
@@ -431,6 +497,262 @@ export class Actor {
       this.invulnerable = false;
       this.setState('move');
       this.applyLocomotion(moving ? 3 : 0);
+    }
+  }
+
+  // ------------------------------------------------------------------ jet (the goblin's firework jump pack)
+  // F (or the battle AI) launches the wearer off in a semi-random arc the way it faces:
+  // crouch (jet_launch), fly (jet_fly, the sandbox moves the root), land (jet_land).
+  canJet() {
+    const b = this.char.loadout.back;
+    return !!(b && this.game.assets.item(b)?.jump) && this.state === 'move' && !(this.jetCd > 0);
+  }
+
+  startJet(yaw = this.facing, forceFail = false) {
+    if (!this.canJet()) return false;
+    const c = this.char;
+    // most launches are clean: a neat arc.  One in five is a launch failure (owner; V in the
+    // sandbox forces one): a big climb, head leading along the arc the whole way (upright
+    // going up, head first coming down) while it spins three turns about its own feet-to-head
+    // axis, weaving, then a head-first crash into a dodge roll.  The reach is the same.
+    const R = () => Math.random();
+    const fail = forceFail || R() < 0.2;
+    const a = yaw + (R() - 0.5) * (fail ? 1.0 : 0.35);
+    this.jet = fail ? {
+      // a failure is simulated, not an arc: a slow sputtering lift-off of random length, then
+      // the pack blows - a violent kick up, thrashing thrust while it burns, then a fall under
+      // gravity, steered loosely toward the landing spot (owner: erratic, not a perfect arc)
+      fail, dist: 6 + R() * 5, sputT: 0.5 + R() * 1.3, spinDir: R() < 0.5 ? -1 : 1, spin: 0, pitch: 0,
+    } : {
+      fail, dist: 6 + R() * 5, apex: 3.5 + R() * 1.5, T: 1.15 + R() * 0.3,
+      wob: (R() - 0.5) * 0.6, wobF: 1 + R(), wob2: 0, wobF2: 1, bob: 0, bobF: 1, spins: 0,
+    };
+    Object.assign(this.jet, { phase: 'launch', t: 0, from: this.pos.clone(), dir: new THREE.Vector3(Math.sin(a), 0, Math.cos(a)),
+      ph: R() * 6.28 });
+    this.facing = a;
+    this.setState('jet');
+    c.drawAmount = 0;
+    if (c.slots.upper) c.setSlot('upper', null, { fade: 0.05 });
+    if (c.slots.left) c.setSlot('left', null, { fade: 0.05 });
+    c.setSlot('base', 'jet_launch', { once: true, restart: true, fade: 0.12 });   // eased in from a run or idle
+    c.syncMasks(0.05);
+    this.vel.set(0, 0, 0);
+    return true;
+  }
+
+  // pitch the model forward, after spinning it about its own feet-to-head axis, about the
+  // body's middle (Euler XYZ: the spin is in the body's frame).  The root stays upright.
+  setSpin(pitch, spin) {
+    const m = this.char.model, h = 0.55 * (this.char.raceInfo.height || 1.0);
+    m.rotation.set(pitch, spin, 0);
+    _b.set(0, h, 0).applyEuler(m.rotation);
+    m.position.set(-_b.x, h - _b.y, -_b.z);
+  }
+
+  jetSparks(n, strong = false) {
+    const c = this.char;
+    if (!c.bones.chest) return;
+    c.bones.chest.getWorldPosition(_a);
+    const back = this.forward.multiplyScalar(-0.22 * (c.raceInfo.height_ratio || 1) * 1.6);
+    _a.add(back);
+    _a.y -= 0.18;
+    const g = this.game;
+    g.particles.burst(_a, this.forward.multiplyScalar(-1), { count: n, color: 0xffc43d, speed: strong ? 3 : 1.6, size: 0.05,
+      up: strong ? -5 : -3.5, life: 0.35, spread: 1.6 });
+    g.particles.burst(_a, this.forward.multiplyScalar(-1), { count: Math.ceil(n / 2), color: 0xe0442e, speed: 1.2, size: 0.04,
+      up: -2.5, life: 0.3, spread: 1.4 });
+  }
+
+  updateJet(dt, input, moving) {
+    const j = this.jet, c = this.char;
+    j.t += dt;
+    this.vel.set(0, 0, 0);
+    if (j.phase === 'launch') {
+      if (j.t > 0.14) this.jetSparks(3);
+      if (j.t >= 0.24) {
+        j.phase = 'fly'; j.t = 0;
+        c.setSlot('base', 'jet_fly', { fade: 0.08 });
+        this.jetSparks(14, true);
+        this.game.dust(this.pos, j.dir);
+      }
+      return;
+    }
+    if (j.phase === 'fly' && j.fail) return this.updateJetFail(dt, j, c);
+    if (j.phase === 'fly') {
+      // sparks first, from where it is now (set past an arena wall it sparked beyond it); a
+      // failing pack sputters - gouts and gaps
+      if (j.fail) { if (Math.random() < 0.55) this.jetSparks(Math.random() < 0.25 ? 9 : 3, true); }
+      else if (j.t / j.T < 0.7) this.jetSparks(2);
+      const s = Math.min(1, j.t / j.T);
+      // stepped by the arc's change each frame, so walls (clamped in collide) stop it
+      const side = new THREE.Vector3(j.dir.z, 0, -j.dir.x);
+      const env = Math.sin(s * Math.PI);                           // erratic in the air, calm at both ends
+      const wob = (Math.sin(s * Math.PI * j.wobF) * j.wob + Math.sin(s * Math.PI * j.wobF2 + j.ph) * j.wob2) * env;
+      const ox = j.dir.x * j.dist * s + side.x * wob, oz = j.dir.z * j.dist * s + side.z * wob;
+      this.pos.x += ox - (j.ox || 0); this.pos.z += oz - (j.oz || 0);
+      j.ox = ox; j.oz = oz;
+      this.air = 4 * j.apex * s * (1 - s) + Math.sin(s * Math.PI * j.bobF + j.ph) * j.bob * env;
+      this.facing = Math.atan2(j.dir.x, j.dir.z) + Math.cos(s * Math.PI * j.wobF) * j.wob * 0.12;
+      if (j.fail) {
+        // head leads along the arc: the body's long axis on the flight direction (upright
+        // climbing, level at the top, head down falling); the spin about that axis, eased only
+        // at the ends so it finishes facing ahead
+        const vh = j.dist / j.T, vy = 4 * j.apex * (1 - 2 * s) / j.T;
+        j.pitch = Math.atan2(vh, vy) * Math.min(1, j.t / 0.15);
+        const e = s - Math.sin(2 * Math.PI * s) / (2 * Math.PI);
+        this.setSpin(j.pitch, e * j.spins * Math.PI * 2);
+      } else this.setSpin((0.5 - s) * -0.5, 0);           // a clean arc: nose up, then down
+      if (s >= 1) {
+        j.phase = 'land'; j.t = 0;
+        this.air = 0;
+        if (!j.fail) this.setSpin(0, 0);
+        if (j.fail) {                                              // a crash: tumble out of it in a dodge roll
+          for (let k = 0; k < 4; k++) this.game.dust(this.pos, new THREE.Vector3(Math.sin(k * 1.57), 0, Math.cos(k * 1.57)));
+          this.game.burst(this.pos.clone().setY(0.4), j.dir, 'spark');
+          this.game.shake(0.25);
+          this.jet = null;
+          this.jetCd = 0.6;
+          this.setState('move');
+          this.startDodge({ move: new THREE.Vector2(j.dir.x, j.dir.z) });
+          // the dodge is a forward somersault: join it at its head-down frame (6), so the
+          // head-first dive runs straight into the roll; blend off the angle left over
+          const ROLL_IN = 6;
+          c.slots.base.action.time = ROLL_IN / FPS;
+          this.dodgeDone = smooth01(ROLL_IN / 15) * (this.game.assets.meta('dodge').lunge || 3) * c.stride;
+          this.rollOut = Math.max(0, j.pitch - 2.1);               // the clip is ~120 deg over at frame 6
+          this.setSpin(this.rollOut, 0);
+          return;
+        }
+        c.setSlot('base', 'jet_land', { once: true, restart: true, fade: 0.05 });
+        this.game.dust(this.pos, j.dir);
+        this.game.dust(this.pos, j.dir.clone().multiplyScalar(-1));
+
+      }
+      return;
+    }
+    const f = c.slots.base.action.time * FPS;
+    const m = this.game.assets.meta('jet_land');
+    if ((f >= (m.cancel || 9) && moving) || f >= m.length - 0.5) {
+      this.jet = null;
+      this.jetCd = 0.6;
+      this.setState('move');
+      this.applyLocomotion(moving ? 3 : 0);
+    }
+  }
+
+  // a launch failure (owner's sketch, seen from the side): a slow sputtering rise with a
+  // stall, then the pack blows - a hard climb that goes up and back over the top in a
+  // backflip loop, crosses its own path and dives head first to the landing.  The head leads
+  // along the path the whole way (so it flips backwards over the top), spinning about its
+  // feet-to-head axis, weaving sideways into a spiral; into a head-first crash and roll.
+  planJetFail(j) {
+    const R = Math.random;
+    const D = j.dist, H = (8 + R() * 3) / 1.11;              // the loop's top lands 8-11 m up
+    const r = 0.85 + R() * 0.3, h1 = 1 + R() * 1.5;           // loop size, the sputter's height
+    // (forward u, height y): the sketch, normalised by the reach D and the height H
+    const sput = [[0, 0], [0.04, h1 * 0.55], [0.094, h1], [0.17, h1 * 0.88], [0.245, h1 * 0.86]];
+    const loop = [[0.245, h1 * 0.86], [0.377 * r + 0.06, 0.396 * H], [0.49 * r, 0.547 * H], [0.566 * r, 0.755 * H],
+      [0.585 * r, 0.98 * H], [0.51 * r, 1.09 * H], [0.358 * r, 1.11 * H], [0.245 * r, 0.887 * H], [0.32 * r, 0.66 * H],
+      [0.47 * r, 0.50 * H], [0.717, 0.27 * H], [0.9, 0.08 * H], [1.0, 0]];
+    const toM = q => q.map(([u, y], i) => [u * D, y]);
+    j.sput = this.spline(toM(sput));
+    j.loop = this.spline(toM(loop));
+    j.side = (R() - 0.5) * 1.6; j.sideF = 1.5 + R() * 1.5;      // the spiral's weave
+    j.blastT = 1.9 + R() * 0.6;
+  }
+
+  // a Catmull-Rom curve through pts, sampled by arc length: {p: [[u, y]...], len: [...], L}
+  spline(pts) {
+    const P = [pts[0], ...pts, pts[pts.length - 1]], out = [], len = [0];
+    for (let i = 1; i < P.length - 2; i++) {
+      for (let k = 0; k < 12; k++) {
+        const t = k / 12, t2 = t * t, t3 = t2 * t;
+        const f = (a, b, c, d) => 0.5 * (2 * b + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t2 + (-a + 3 * b - 3 * c + d) * t3);
+        out.push([f(P[i - 1][0], P[i][0], P[i + 1][0], P[i + 2][0]), f(P[i - 1][1], P[i][1], P[i + 1][1], P[i + 2][1])]);
+      }
+    }
+    out.push(pts[pts.length - 1]);
+    for (let i = 1; i < out.length; i++) len.push(len[i - 1] + Math.hypot(out[i][0] - out[i - 1][0], out[i][1] - out[i - 1][1]));
+    return { p: out, len, L: len[len.length - 1] };
+  }
+
+  // the point (and tangent) a fraction f along a sampled curve
+  along(cv, f) {
+    const d = Math.min(1, Math.max(0, f)) * cv.L;
+    let i = 1;
+    while (i < cv.len.length - 1 && cv.len[i] < d) i++;
+    const a = cv.p[i - 1], b = cv.p[i], k = (d - cv.len[i - 1]) / Math.max(1e-6, cv.len[i] - cv.len[i - 1]);
+    return { u: a[0] + (b[0] - a[0]) * k, y: a[1] + (b[1] - a[1]) * k, du: b[0] - a[0], dy: b[1] - a[1] };
+  }
+
+  updateJetFail(dt, j, c) {
+    const R = Math.random;
+    if (!j.stage) { this.planJetFail(j); j.stage = 'sputter'; j.st = 0; j.pu = 0; j.pw = 0; j.pitchU = 0; }
+    j.st += dt;
+    let q, w = 0;
+    if (j.stage === 'sputter') {
+      // wheezing up: slow, jerky, sparks in fits and gaps
+      const k = j.st / j.sputT;
+      q = this.along(j.sput, smooth01(k) + Math.sin(j.st * 23) * 0.015);
+      q.y += Math.sin(j.st * 31) * 0.04 * k;
+      if (R() < 0.35) this.jetSparks(R() < 0.15 ? 6 : 1);
+      j.spin += j.spinDir * dt * 1.2 * k;
+      if (k >= 1) {
+        j.stage = 'blast'; j.st = 0; j.spin0 = j.spin;
+        j.spinEnd = Math.round((j.spin + j.spinDir * 6 * Math.PI) / (2 * Math.PI)) * 2 * Math.PI;   // ~3 turns, on a whole turn
+        for (let n = 0; n < 3; n++) this.jetSparks(16, true);
+        this.game.burst(this.pos.clone().setY(this.air + 0.5), j.dir, 'spark');
+        this.game.particles.burst(this.pos.clone().setY(this.air + 0.3), j.dir.clone().multiplyScalar(-1),
+          { count: 14, color: 0x5a5550, speed: 2.5, size: 0.16, up: 1.0, life: 0.9, spread: 2.2 });
+        this.game.shake(0.3);
+      }
+    } else {
+      // speed along the loop: the blast's kick, slowing over the top, then full speed again
+      // into the ground - a crash, no easing into the roll (owner)
+      const tau = Math.min(1, j.st / j.blastT);
+      const f = tau + 0.1 * Math.sin(2 * Math.PI * tau);
+      q = this.along(j.loop, f);
+      w = j.side * Math.sin(Math.PI * tau * j.sideF) * Math.sin(Math.PI * tau);
+      if (tau < 0.45) this.jetSparks(4, true);
+      else if (R() < 0.15) this.jetSparks(R() < 0.3 ? 7 : 2, true);
+      // three turns about the long axis, still accelerating at impact, landing on a whole
+      // turn (faces its roll)
+      j.spin = j.spin0 + (j.spinEnd - j.spin0) * Math.pow(tau, 1.5);
+      if (tau >= 1) q.y = 0;
+    }
+    // move by the path's change (walls clamp it in collide)
+    const side = new THREE.Vector3(j.dir.z, 0, -j.dir.x);
+    this.pos.addScaledVector(j.dir, q.u - j.pu).addScaledVector(side, w - j.pw);
+    j.pu = q.u; j.pw = w;
+    this.air = Math.max(0, q.y);
+    this.facing = Math.atan2(j.dir.x, j.dir.z);
+    // head leads along the tangent: pitch from vertical, forward positive, kept continuous
+    // through the backflip (it goes back over the top: past -180)
+    if (Math.hypot(q.du, q.dy) > 1e-5) {
+      let want = Math.atan2(q.du, q.dy);
+      while (want - j.pitchU > Math.PI) want -= Math.PI * 2;
+      while (want - j.pitchU < -Math.PI) want += Math.PI * 2;
+      j.pitchU += (want - j.pitchU) * Math.min(1, dt * (j.stage === 'sputter' ? 4 : 14));
+    }
+    // the sputter stays mostly upright (its stall runs level: leading head-first it lay flat)
+    j.pitch = j.stage === 'sputter' ? j.pitchU * 0.35 + Math.sin(j.st * 7 + j.ph) * 0.15 : j.pitchU;
+    this.setSpin(j.pitch, j.spin);
+    if (j.stage === 'blast' && j.st >= j.blastT) {
+      this.air = 0;
+      for (let k = 0; k < 4; k++) this.game.dust(this.pos, new THREE.Vector3(Math.sin(k * 1.57), 0, Math.cos(k * 1.57)));
+      this.game.burst(this.pos.clone().setY(0.4), j.dir, 'spark');
+      this.game.shake(0.25);
+      this.jet = null;
+      this.jetCd = 0.6;
+      this.setState('move');
+      this.startDodge({ move: new THREE.Vector2(j.dir.x, j.dir.z) });
+      // the dodge is a forward somersault: join it at its head-down frame (6)
+      const ROLL_IN = 6, TAU = Math.PI * 2;
+      c.slots.base.action.time = ROLL_IN / FPS;
+      this.dodgeDone = smooth01(ROLL_IN / 15) * (this.game.assets.meta('dodge').lunge || 3) * c.stride;
+      const pn = ((j.pitch % TAU) + TAU) % TAU;                 // head down, forward: ~135 deg
+      this.rollOut = Math.max(0, pn - 2.1);
+      this.setSpin(this.rollOut, 0);
     }
   }
 
@@ -450,6 +772,8 @@ export class Actor {
       c.setSlot('upper', null, { fade: 0.05 });
       c.setSlot('left', null, { fade: 0.05 });
       c.setSlot('base', 'death', { once: true, restart: true, fade: 0.08 });
+      if (this.jet || this.rollOut !== undefined) { this.setSpin(0, 0); this.rollOut = undefined; }
+      this.jet = null;
       c.syncMasks(0.05);
       this.facing = yawTo(-dir.x, -dir.z);
       this.vel.set(0, 0, 0);

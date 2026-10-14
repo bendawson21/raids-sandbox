@@ -124,7 +124,7 @@ export class Game {
     sun.shadow.normalBias = 0.03;
     this.scene.add(sun, sun.target);
 
-    this.particles = new Particles(this.scene);
+    this.particles = new Particles(this.scene, 1500);     // a sky of jump-pack sparks
     this.rings = new Rings(this.scene);
     this.floaters = new Floaters(document.getElementById('floaters'), this.camera, r);
     this.arcMeshes = [];
@@ -273,18 +273,25 @@ export class Game {
     return true;
   }
 
+  // F: use what's on your back - plant / pick up the pavise, or fire the jump pack
+  useBack(actor) {
+    if (actor.pavise || actor.char.loadout.back === 'back_pavise') return this.togglePavise(actor);
+    return actor.startJet();
+  }
+
   collide(a) {
+    const aloft = (a.air || 0) > 0.6;                     // a jump pack flies over heads
     for (const o of this.actors) {
-      if (o === a || !o.alive) continue;
+      if (aloft || o === a || !o.alive || (o.air || 0) > 0.6) continue;
       push(a.pos, o.pos, a.radius + o.radius);
     }
-    for (const d of this.dummies) push(a.pos, d.pos, a.radius + d.radius);
+    if (!aloft) for (const d of this.dummies) push(a.pos, d.pos, a.radius + d.radius);
     if (this.clampArena) this.clampArena(a.pos);          // the battle sim's pentagon
     else {
       const r = Math.hypot(a.pos.x, a.pos.z);
       if (r > ARENA_R) a.pos.multiplyScalar(ARENA_R / r);
     }
-    a.pos.y = 0;
+    a.pos.y = a.air || 0;                                // airborne: the jump pack's arc
   }
 
   // ------------------------------------------------------------------ feedback
@@ -465,7 +472,8 @@ export class Game {
     // camera (Q / E turn it around the player, R puts it back)
     const turn = (this.keys.has('KeyE') ? 1 : 0) - (this.keys.has('KeyQ') ? 1 : 0);
     if (turn) this.camYaw += turn * 1.6 * realDt;
-    if (this.player) this.camTarget.lerp(this.player.pos.clone().setY(1.0), 1 - Math.exp(-8 * realDt));
+    // follows a jump pack part way up (the arc stays readable against the ground)
+    if (this.player) this.camTarget.lerp(this.player.pos.clone().setY(1.0 + (this.player.air || 0) * 0.6), 1 - Math.exp(-8 * realDt));
     const cp = Math.cos(this.camPitch);
     const off = new THREE.Vector3(Math.sin(this.camYaw) * cp, Math.sin(this.camPitch), Math.cos(this.camYaw) * cp)
       .multiplyScalar(this.camDist);

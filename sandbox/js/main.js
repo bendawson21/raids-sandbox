@@ -76,7 +76,8 @@ game.onKey = e => {
     panel.render();
   }
   if (e.code === 'KeyP') { game.paused = !game.paused; panel.render(); }
-  if (e.code === 'KeyF') game.togglePavise(game.player);
+  if (e.code === 'KeyF') game.useBack(game.player);     // the pavise, or the goblin jump pack
+  if (e.code === 'KeyV') game.player.startJet(game.player.facing, true);   // jump pack: a guaranteed launch failure
   if (e.code === 'KeyR') { game.camYaw = game.CAM_HOME.yaw; game.camPitch = game.CAM_HOME.pitch; }
 };
 

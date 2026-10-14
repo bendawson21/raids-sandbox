@@ -36,6 +36,19 @@ const UNITS = [
   { lo: 'plate_knight', w: 1, hp: 1.4 }, { lo: 'captain', w: 1, hp: 1.4, dmg: 1.1 },
   { lo: 'lieutenant', w: 1, hp: 1.2 }, { lo: 'sergeant_plume', w: 1, hp: 1.05 },
   { lo: 'orc_brute', w: 0.25, hp: 1.5, dmg: 1.2 },
+  // the orc's captive wheel: orcs only
+  { lo: 'orc_warden', w: 0.4, hp: 1.5, dmg: 1.25, races: ['orc'] },
+  // the dwarf's back-piece outfits: dwarves only (their back pieces are dwarf-only items)
+  { lo: 'hold_bellows', w: 0.8, hp: 1.35, dmg: 1.1, races: ['dwarf'] },
+  { lo: 'hold_forge', w: 0.8, hp: 1.45, races: ['dwarf'] },
+  { lo: 'hold_runebearer', w: 0.8, hp: 1.4, races: ['dwarf'] },
+  // the goblin rocketeer: a firework jump pack (goblin only)
+  { lo: 'goblin_rocketeer', w: 0.8, hp: 0.9, races: ['goblin'] },
+  // the goblin kit (goblin only): slingers, glider, sapper, scavenger
+  { lo: 'goblin_skirmisher', w: 1.6, hp: 0.85, races: ['goblin'] },
+  { lo: 'goblin_glider', w: 0.6, hp: 0.9, races: ['goblin'] },
+  { lo: 'goblin_sapper', w: 0.6, hp: 0.95, races: ['goblin'] },
+  { lo: 'goblin_scavenger', w: 0.6, hp: 1.0, races: ['goblin'] },
 ];
 
 // ---------------------------------------------------------------- boot
@@ -137,19 +150,22 @@ game.clampArena = p => {
 };
 
 // ---------------------------------------------------------------- units
+// every goblin straps on the firework glider (a jump pack) and rockets about the field
+const GOBLIN_JETS = true;
 const LO = assets.catalog.loadouts;
 const pool = UNITS.filter(u => LO[u.lo]);
-const wsum = pool.reduce((s, u) => s + u.w, 0);
-function pickUnit() {
-  let r = Math.random() * wsum;
-  for (const u of pool) { r -= u.w; if (r <= 0) return u; }
-  return pool[0];
+function pickUnit(race) {                    // units with a race list only spawn for those races
+  const ok = pool.filter(u => !u.races || u.races.includes(race));
+  let r = Math.random() * ok.reduce((s, u) => s + u.w, 0);
+  for (const u of ok) { r -= u.w; if (r <= 0) return u; }
+  return ok[0];
 }
 function loadoutFor(u, f) {
   const lo = LO[u.lo];
   const L = { palette: f.palette, race: f.race, hair: lo.hair || null, beard: lo.beard || null,
     mainhand: lo.mainhand || null, offhand: lo.offhand || null };
   for (const id of lo.items) L[assets.item(id).slot] = id;
+  if (GOBLIN_JETS && f.race === 'goblin') L.back = 'back_fireworks';
   return L;
 }
 
@@ -160,7 +176,7 @@ function spawnUnit(fi) {
   const a = corners[fi], b = corners[(fi + 1) % corners.length];
   const t = 0.1 + Math.random() * 0.8;
   const pos = a.clone().lerp(b, t).addScaledVector(inward[fi].n, 1.5 + Math.random() * 2.5);
-  const u = pickUnit(), rs = RACE_STATS[f.race];
+  const u = pickUnit(f.race), rs = RACE_STATS[f.race];
   const hp = Math.round(rs.hp * u.hp);
   const act = game.spawn(loadoutFor(u, f), pos, {
     name: u.lo, faction: f.race, hittable: true, hp, facing: Math.atan2(-pos.x, -pos.z) });
@@ -203,7 +219,7 @@ function separate(a, move, radius = 2.0, k = 0.9) {
   if (move.lengthSq() > 1) move.normalize();
   return move;
 }
-const ranged = a => a.char.stance === 'bow' || a.char.stance === 'crossbow';
+const ranged = a => a.char.stance === 'bow' || a.char.stance === 'crossbow' || a.char.stance === 'sling';
 let engaged = new Map();            // target -> melee attackers closing on it (rebuilt each tick)
 
 function pickTarget(a) {
@@ -224,6 +240,17 @@ function pickTarget(a) {
   return best;
 }
 
+// a jump pack: now and then, rocket toward a point 6-11 m off (the arc lands near it) -
+// a target to fight, or (no fight) the way to the objective
+function tryJet(a, to, d, dt) {
+  const B = a.bt;
+  if (B.jet === undefined) B.jet = 0.5 + Math.random() * 3;
+  B.jet -= dt;
+  if (a.state !== 'move' || d < 6 || B.jet > 0) return false;
+  B.jet = 3 + Math.random() * 5;
+  return a.startJet(Math.atan2(to.x - a.pos.x, to.z - a.pos.z));
+}
+
 function battleAI(a, dt) {
   const inp = emptyInput();
   const B = a.bt;
@@ -235,6 +262,7 @@ function battleAI(a, dt) {
   if (T) {
     inp.aim = T.pos.clone();
     const d = a.pos.distanceTo(T.pos);
+    if (d < 11 && tryJet(a, T.pos, d, dt)) return inp;
     if (ranged(a)) return rangedAI(a, T, d, dt, inp);
     return meleeAI(a, T, d, dt, inp);
   }
@@ -250,6 +278,7 @@ function battleAI(a, dt) {
   } else {
     goal = new THREE.Vector3(Math.sin(B.lane) * B.laneR, 0, Math.cos(B.lane) * B.laneR);
     inp.move.copy(steer(a, goal, 0.8)).multiplyScalar(0.85);
+    if (tryJet(a, goal, a.pos.distanceTo(goal), dt)) return emptyInput();
   }
   separate(a, inp.move);
   return inp;
@@ -298,7 +327,7 @@ function rangedAI(a, T, d, dt, inp) {
       }
     }
   }
-  if (a.state === 'aim' || a.state === 'xaim') { B.hold -= dt; inp.attackHeld = B.hold > 0; }
+  if (a.state === 'aim' || a.state === 'xaim' || a.state === 'swhirl') { B.hold -= dt; inp.attackHeld = B.hold > 0; }
   return inp;
 }
 
