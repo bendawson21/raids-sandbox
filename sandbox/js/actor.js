@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { STANCES } from './character.js';
 import { Trail } from './effects.js';
+import { b2t } from './assets.js';
 
 const FPS = 30;
 const _a = new THREE.Vector3(), _b = new THREE.Vector3();
@@ -91,6 +92,9 @@ export class Actor {
       case 'block': this.updateBlock(dt, input, moving); break;
       case 'aim': this.updateAim(dt, input, moving); break;
       case 'release': this.updateRelease(dt, input, moving); break;
+      case 'xaim': this.updateXAim(dt, input, moving); break;
+      case 'xshoot': this.updateXShoot(dt, input, moving); break;
+      case 'reload': this.updateReload(dt, input, moving); break;
       case 'dodge': this.updateDodge(dt, input, moving); break;
       case 'dead': this.updateDead(dt); break;
       case 'preview': {
@@ -127,6 +131,7 @@ export class Actor {
     const c = this.char;
     if (input.dodge) return this.startDodge(input);
     if (c.stance === 'bow' && input.attack) return this.startAim();
+    if (c.stance === 'crossbow' && input.attack) return c.xbowLoaded ? this.startXAim() : this.startReload();
     if (input.block && c.hasShield) return this.startBlock();
     if (input.attack && this.st().combo.length) return this.startAttack(0, input);
     const speed = 4.6 * c.moveSpeed;
@@ -307,6 +312,90 @@ export class Actor {
     this.applyLocomotion(this.vel.length(), true, 'bow_stance', 'bow_walk');
     if (t * FPS >= 6 && input.attack) return this.startAim();
     if (t >= this.game.assets.meta('bow_release').duration - 0.02 || (t * FPS > 8 && moving)) {
+      c.setSlot('upper', null, { fade: 0.2 });
+      this.setState('move');
+      this.applyLocomotion(this.vel.length());
+    }
+  }
+
+  // ------------------------------------------------------------------ crossbow
+  // hold to raise and aim, release to loose; then it spans itself (xbow_reload, upper
+  // body: walkable at a crawl) - the string follows the left hand over meta.pull
+  xlower(speed) { this.applyLocomotion(speed, true, 'xbow_stance', 'walk_guard'); }
+
+  startXAim() {
+    this.setState('xaim');
+    this.char.setSlot('upper', 'xbow_raise', { mask: 'upper', once: true, restart: true, fade: 0.08 });
+    this.xlower(0);
+  }
+
+  updateXAim(dt, input, moving) {
+    const c = this.char, up = c.slots.upper;
+    const raised = !(up && up.name === 'xbow_raise');
+    if (up && up.name === 'xbow_raise' && up.action.time >= this.game.assets.meta('xbow_raise').duration - 0.01) {
+      c.setSlot('upper', 'xbow_aim', { mask: 'upper', fade: 0.08 });
+    }
+    if (input.dodge) { c.setSlot('upper', null); return this.startDodge(input); }
+    const target = new THREE.Vector3(input.move.x, 0, input.move.y).multiplyScalar(1.6 * c.moveSpeed);
+    this.vel.lerp(target, 1 - Math.exp(-12 * dt));
+    this.faceAim(input, dt, 12);
+    this.xlower(this.vel.length());
+    if (!input.attackHeld) {
+      if (raised) this.fireBolt(input);
+      else { c.setSlot('upper', null, { fade: 0.15 }); this.setState('move'); this.applyLocomotion(0); }
+    }
+  }
+
+  fireBolt(input) {
+    const c = this.char, xb = c.weapons.mainhand, it = c.itemMeta(c.loadout.mainhand);
+    const from = new THREE.Vector3();
+    if (xb && it && it.muzzle) from.copy(b2t(it.muzzle)).applyMatrix4(xb.matrixWorld);
+    else from.copy(this.pos).setY(1.45);
+    // a flat, fast shot: pitched at torso height (1.1 m) over the aimed spot, plus the drop
+    // over the distance (a bolt has no arrow's arc to bring it down onto a short target)
+    const SPEED = 46, GRAV = 4.5;
+    let dir = this.forward, dist = 12;
+    if (input.aim) {
+      const d = new THREE.Vector3(input.aim.x - from.x, 0, input.aim.z - from.z);
+      if (d.lengthSq() > 0.25) { dist = d.length(); dir = d.normalize(); }
+    }
+    const t = dist / SPEED;
+    const vy = (1.1 - from.y) / t + 0.5 * GRAV * t;
+    this.game.spawnArrow(this, from, dir, { mesh: 'proj_bolt', speed: SPEED, lift: vy, dmg: [26, 34] });
+    c.xbowLoaded = false;
+    this.setState('xshoot');
+    c.setSlot('upper', 'xbow_shoot', { mask: 'upper', once: true, restart: true, fade: 0.03 });
+  }
+
+  updateXShoot(dt, input, moving) {
+    const a = this.char.slots.upper && this.char.slots.upper.action;
+    this.vel.multiplyScalar(Math.exp(-10 * dt));
+    this.faceAim(input, dt, 10);
+    this.xlower(this.vel.length());
+    if (!a || a.time >= this.game.assets.meta('xbow_shoot').duration - 0.02) this.startReload();
+  }
+
+  startReload() {
+    this.setState('reload');
+    this.char.setSlot('upper', 'xbow_reload', { mask: 'upper', once: true, restart: true, fade: 0.1 });
+    this.xlower(this.vel.length());
+  }
+
+  updateReload(dt, input, moving) {
+    const c = this.char, m = this.game.assets.meta('xbow_reload');
+    const a = c.slots.upper && c.slots.upper.action;
+    const f = a ? a.time * FPS : 1e9;
+    const [p0, p1] = m.pull || [14, 30];
+    if (!c.xbowLoaded) {
+      c.xbowPull = f < p0 ? 0 : 1;
+      if (f >= p1) { c.xbowLoaded = true; c.xbowPull = 0; }
+    }
+    const target = new THREE.Vector3(input.move.x, 0, input.move.y).multiplyScalar(1.0 * c.moveSpeed);
+    this.vel.lerp(target, 1 - Math.exp(-10 * dt));
+    if (moving) this.turnTo(yawTo(input.move.x, input.move.y), 6, dt);
+    this.xlower(this.vel.length());
+    if (!a || a.time >= m.duration - 0.02) {
+      c.xbowLoaded = true; c.xbowPull = 0;
       c.setSlot('upper', null, { fade: 0.2 });
       this.setState('move');
       this.applyLocomotion(this.vel.length());

@@ -40,6 +40,11 @@ const npc = (lo, pos, ai, opts = {}) => {
 npc('noble', V(8.0, -4.2), drill(game.drillDummyA, { rest: 1.8 }));
 npc('warlord', V(-8.0, -4.15), drill(game.drillDummyB, { rest: 2.4 }));
 npc('ranger', V(-10.2, -4.0), archer(game.archTargets[0]));
+{ // a crossbowman shooting from behind his planted pavise
+  const t = game.archTargets[2], x = npc('crossbowman', V(10.2, -6.4), archer(t, { every: 4.2 }));
+  x.facing = Math.atan2(t.pos.x - x.pos.x, t.pos.z - x.pos.z);
+  game.togglePavise(x);
+}
 npc('mage', V(-6.5, 6.5), wander({ radius: 2.5 }), { facing: 0 });
 npc('peasant', V(-3.5, 9), wander({ radius: 4 }), { facing: 0 });
 npc('bandit', V(6.5, 4.5), spar(game), { hittable: true, hp: 70, respawn: 4, faction: 'bandit' });
@@ -71,6 +76,7 @@ game.onKey = e => {
     panel.render();
   }
   if (e.code === 'KeyP') { game.paused = !game.paused; panel.render(); }
+  if (e.code === 'KeyF') game.togglePavise(game.player);
   if (e.code === 'KeyR') { game.camYaw = game.CAM_HOME.yaw; game.camPitch = game.CAM_HOME.pitch; }
 };
 

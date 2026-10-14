@@ -37,7 +37,7 @@ export function drill(dummy, { rest = 2.2, station = null } = {}) {
   };
 }
 
-// Shoot arrows at a target on a timer.
+// Shoot arrows (or crossbow bolts: it spans itself after each shot) at a target on a timer.
 export function archer(target, { every = 3.2 } = {}) {
   const S = { t: 1 + Math.random() * every, hold: 0 };
   return (a, dt) => {
@@ -50,7 +50,7 @@ export function archer(target, { every = 3.2 } = {}) {
       a.turnTo(Math.atan2(dx, dz), 6, dt);
     }
     if (S.t <= 0 && a.state === 'move') { inp.attack = true; inp.attackHeld = true; S.hold = 1.0 + Math.random() * 0.5; S.t = every; }
-    if (a.state === 'aim') { S.hold -= dt; inp.attackHeld = S.hold > 0; }
+    if (a.state === 'aim' || a.state === 'xaim') { S.hold -= dt; inp.attackHeld = S.hold > 0; }
     return inp;
   };
 }

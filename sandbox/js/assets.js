@@ -43,8 +43,6 @@ export class Assets {
       const b = { styles: {}, clips: {}, variants: new Map() };
       const anim = await loadGLB(ROOT + (files.anims || 'characters/anims.glb') + '?v=' + Date.now());
       for (const c of anim.animations) {
-        // cape bones are driven procedurally in-engine
-        c.tracks = c.tracks.filter(t => !t.name.startsWith('cape_'));
         b.clips[c.name] = c;
       }
       onProgress?.('animations');

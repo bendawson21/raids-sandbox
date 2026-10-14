@@ -1,5 +1,5 @@
 // Modular character: one cloned skeleton, palette material, equipment visibility,
-// weapon sockets, layered animation slots, procedural cape + bow string.
+// weapon sockets, layered animation slots, procedural bow string.
 import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { b2t } from './assets.js';
@@ -13,6 +13,7 @@ export const STANCES = {
   dual: { idle: 'idle_dual', run: 'run_dual', combo: ['attack_dual_1', 'attack_dual_2', 'attack_dual_3'] },
   '2h': { idle: 'idle_2h', run: 'run_2h', combo: ['attack_2h_1', 'attack_2h_2', 'attack_2h_3'] },
   bow: { idle: 'idle_bow', run: 'run_bow', combo: [] },
+  crossbow: { idle: 'idle_xbow', run: 'run_xbow', combo: [] },
   spear: { idle: 'idle_spear', run: 'run_spear', combo: ['attack_spear_1', 'attack_spear_2', 'attack_spear_3'] },
   spear_shield: { idle: 'idle_spear_shield', run: 'run_spear_shield', combo: ['attack_spsh_1', 'attack_spsh_2', 'attack_spsh_3'] },
 };
@@ -29,10 +30,10 @@ export class Character {
       boots: null, gloves: null, back: null, mainhand: null, offhand: null }, loadout);
     this.weapons = {};
     this.slots = { base: null, upper: null, left: null };
-    this.cape = [0, 0, 0].map(() => ({ x: 0, vx: 0, z: 0, vz: 0 }));
     this.drawAmount = 0;
+    this.xbowLoaded = true;      // crossbow: spanned and a bolt on the deck
+    this.xbowPull = 0;           // while spanning: 1 = the string follows the left hand
     this.animSpeed = 1;
-    this._lastChest = null;
     this.build();
   }
 
@@ -61,7 +62,6 @@ export class Character {
         o.castShadow = true;
       }
     });
-    this.capeRest = ['cape_1', 'cape_2', 'cape_3'].map(n => this.bones[n].quaternion.clone());
     this.mixer = new THREE.AnimationMixer(this.model);
     this.slots = { base: null, upper: null, left: null };
     this.weapons = {};
@@ -96,17 +96,23 @@ export class Character {
   async setRace(race) {
     await this.assets.loadRace(race);
     this.loadout.race = race;
-    this._lastChest = null;
     this.build();
   }
 
   // ------------------------------------------------------------- equipment
   item(id) { return id ? this.assets.item(id) : null; }
+  // the item's catalog entry with this race's own build points (a crossbow built to the race)
+  itemMeta(id) {
+    const it = this.item(id);
+    const ov = it && (this.raceInfo.item_meta || {})[id];
+    return ov ? Object.assign({}, it, ov) : it;
+  }
 
   get stance() {
     const m = this.item(this.loadout.mainhand), o = this.item(this.loadout.offhand);
     if (o && o.kind === 'bow') return 'bow';
     if (!m) return 'fists';
+    if (m.kind === 'crossbow') return 'crossbow';
     if (m.kind === 'spear') return this.hasShield ? 'spear_shield' : 'spear';
     if (m.kind === '2h') return '2h';
     if (o && o.kind === '1h') return 'dual';
@@ -119,12 +125,12 @@ export class Character {
     const L = this.loadout;
     L[slot] = id || null;
     const m = this.item(L.mainhand), o = this.item(L.offhand);
-    if (slot === 'mainhand' && m && m.kind === '2h') L.offhand = null;
+    if (slot === 'mainhand' && m && (m.kind === '2h' || m.kind === 'crossbow')) L.offhand = null;
     // a spear goes two-handed, or one-handed with a shield
     if (slot === 'mainhand' && m && m.kind === 'spear' && o && o.kind !== 'shield') L.offhand = null;
     if (slot === 'mainhand' && m && o && o.kind === 'bow') L.offhand = null;
     if (slot === 'offhand' && o && (o.kind === 'bow')) L.mainhand = null;
-    if (slot === 'offhand' && o && m && m.kind === '2h') L.mainhand = null;
+    if (slot === 'offhand' && o && m && (m.kind === '2h' || m.kind === 'crossbow')) L.mainhand = null;
     if (slot === 'offhand' && o && o.kind === '1h' && (!m || m.kind !== '1h')) {
       // dual wield needs a one-hander in the main hand too
       if (!m) L.mainhand = id;
@@ -156,11 +162,15 @@ export class Character {
       // glTF keeps bone-local axes as authored in Blender (Z-up) while mesh data is
       // converted to Y-up, so undo that conversion for meshes parented to bones.
       m.position.set(0, 0, 0); m.rotation.set(Math.PI / 2, 0, 0); m.scale.setScalar(ws);
+      // a strapped shield's back must clear the race's forearm + sleeve (catalog races.*.forearm_clear)
+      const it0 = this.item(id);
+      if (it0 && it0.back != null) m.position.x = Math.max(0, (this.raceInfo.forearm_clear || 0) - it0.back * ws);
       m.castShadow = true;
       this.bones[s === 'mainhand' ? 'weapon_R' : 'weapon_L'].add(m);
       this.weapons[s] = m;
       const it = this.item(id);
       if (it.kind === 'bow') this.makeBowString(m, it);
+      if (it.kind === 'crossbow') this.makeXbowString(m, this.itemMeta(id));
     }
   }
 
@@ -174,6 +184,29 @@ export class Character {
     this.updateBowString();
   }
 
+  makeXbowString(xb, it) {
+    // the string from the prod's tips to: the nut (spanned), the left hand (spanning) or
+    // the slack line at the prod; a bolt on the deck while loaded (catalog item meta)
+    const geo = new THREE.CylinderGeometry(0.005, 0.005, 1, 4, 1);
+    geo.translate(0, 0.5, 0);
+    const mat = new THREE.MeshBasicMaterial({ color: 0xe9e1c8 });
+    const a = new THREE.Mesh(geo, mat), b = new THREE.Mesh(geo, mat);
+    xb.add(a, b);
+    const s = { a, b, top: b2t(it.string[0]), bot: b2t(it.string[1]), nock: b2t(it.nock), nut: b2t(it.nut) };
+    const lib = this.assets.lib(this.style, this.race);
+    if (lib.statics.proj_bolt) {
+      const bolt = lib.statics.proj_bolt.clone();
+      bolt.material = this.material;
+      bolt.position.copy(b2t(it.bolt));
+      // the bolt's tip (Blender +Y) is -Z in its glTF mesh space
+      bolt.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), b2t(it.bolt_dir).normalize());
+      xb.add(bolt);
+      s.bolt = bolt;
+    }
+    xb.userData.xbow = s;
+    this.updateBowString();
+  }
+
   refresh() {
     const cat = this.assets.catalog, L = this.loadout;
     const hidden = new Set(), hiddenSlots = new Set();
@@ -182,6 +215,7 @@ export class Character {
       if (!it) continue;
       it.hides.forEach(h => hidden.add(h));
       (it.hides_slots || []).forEach(h => hiddenSlots.add(h));
+      if (s === 'helmet') (this.raceInfo.helmet_hides || []).forEach(h => hidden.add(h));   // pointed ears
     }
     for (const [name, mesh] of Object.entries(this.meshes)) {
       let vis = false;
@@ -243,43 +277,26 @@ export class Character {
   update(dt) {
     this.mixer.update(dt * this.animSpeed);
     this.model.updateMatrixWorld(true);
-    this.updateCape(dt);
     this.updateBowString();
   }
 
-  updateCape(dt) {
-    if (!(this.meshes.back_cape?.visible || this.meshes.back_cape_tattered?.visible) || dt <= 0) return;
-    const chest = this.bones.chest;
-    chest.getWorldPosition(_v);
-    if (!this._lastChest) this._lastChest = _v.clone();
-    const vel = _v2.copy(_v).sub(this._lastChest).divideScalar(Math.max(dt, 1e-4));
-    this._lastChest.copy(_v);
-    chest.getWorldQuaternion(_q);
-    // bone axes are Blender's: chest local +Z == character front, +X == character left
-    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(_q);
-    const left = new THREE.Vector3(1, 0, 0).applyQuaternion(_q);
-    const vf = vel.dot(fwd), vs = vel.dot(left);
-    // keep the cape hanging when the chest pitches forward/back (gravity)
-    const pitch = Math.asin(THREE.MathUtils.clamp(-fwd.y, -1, 1));
-    const t = performance.now() / 1000;
-    const speed = Math.min(1, Math.hypot(vf, vs) / 5);
-    const lift = THREE.MathUtils.clamp(vf * 0.13, -0.2, 0.85);
-    for (let i = 0; i < 3; i++) {
-      const c = this.cape[i];
-      const flutter = Math.sin(t * 11 + i * 1.7) * 0.07 * speed * (i + 1) * 0.6;
-      let tx = (i === 0 ? lift - pitch * 0.85 : lift * 0.35) + flutter;
-      if (i === 0) tx = Math.max(tx, -0.15);
-      const tz = THREE.MathUtils.clamp(-vs * 0.03, -0.25, 0.25) * (i === 0 ? 1 : 0.5);
-      c.vx += (tx - c.x) * 70 * dt; c.vx *= Math.exp(-9 * dt); c.x += c.vx * dt;
-      c.vz += (tz - c.z) * 60 * dt; c.vz *= Math.exp(-9 * dt); c.z += c.vz * dt;
-      const b = this.bones['cape_' + (i + 1)];
-      b.quaternion.copy(this.capeRest[i]);
-      b.rotateX(c.x);
-      b.rotateZ(c.z);
-    }
-  }
-
   updateBowString() {
+    const xb = this.weapons.mainhand && this.weapons.mainhand.userData.xbow;
+    if (xb) {
+      let to = this.xbowLoaded ? xb.nut : xb.nock;
+      if (!this.xbowLoaded && this.xbowPull > 0.001) {
+        this.bones.weapon_L.getWorldPosition(_v);
+        this.weapons.mainhand.worldToLocal(_v);
+        to = _v2.copy(xb.nock).lerp(_v, this.xbowPull);
+      }
+      for (const [seg, from] of [[xb.a, xb.top], [xb.b, xb.bot]]) {
+        const d = new THREE.Vector3().subVectors(to, from);
+        seg.position.copy(from);
+        seg.quaternion.setFromUnitVectors(Y, d.clone().normalize());
+        seg.scale.set(1, d.length(), 1);
+      }
+      if (xb.bolt) xb.bolt.visible = this.xbowLoaded;
+    }
     const bow = this.weapons.offhand;
     const s = bow && bow.userData.string;
     if (!s) return;

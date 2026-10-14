@@ -24,6 +24,7 @@ class Dummy {
     this.faction = 'neutral';
     const meta = game.assets.item(id) || {};
     this.radius = meta.radius || 0.32;
+    this.rigid = id === 'prop_pavise';        // a planted shield: no wobble, splinters
     this.height = meta.height || 1.8;
     this.tilt = new THREE.Vector2(); this.tv = new THREE.Vector2();
     this.flash = 0;
@@ -49,6 +50,11 @@ class Dummy {
     }
   }
   onHit(attacker, dir, dmg, heavy) {
+    if (this.rigid) {
+      this.flash = 0.6;
+      this.game.burst(this.pos.clone().setY(0.8), dir, 'wood');
+      return;
+    }
     const local = dir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -this.root.rotation.y);
     const k = heavy ? 5.5 : 3.2;
     this.tv.x += local.z * k; this.tv.y += -local.x * k;
@@ -239,6 +245,34 @@ export class Game {
     for (const d of this.dummies) d.build();
   }
 
+  // ------------------------------------------------------------------ pavise
+  // F: a soldier with a slung pavise plants it in front of him (a prop that blocks
+  // movement and stops arrows); F again next to it picks it back up
+  togglePavise(actor) {
+    const c = actor.char;
+    if (actor.pavise) {
+      const p = actor.pavise;
+      if (p.pos.distanceTo(actor.pos) > 1.8) return false;
+      p.root.removeFromParent();
+      this.dummies.splice(this.dummies.indexOf(p), 1);
+      this.targets.splice(this.targets.indexOf(p), 1);
+      actor.pavise = null;
+      c.equip('back', 'back_pavise');
+      return true;
+    }
+    if (c.loadout.back !== 'back_pavise') return false;
+    const pos = actor.pos.clone().addScaledVector(actor.forward, 0.85);
+    const d = new Dummy(this, 'prop_pavise', pos, actor.facing);
+    d.material.map = c.material.map;          // painted in its owner's colours
+    d.root.scale.setScalar(c.raceInfo.weapon_scale || 1);   // the size it is on his back
+    d.material.needsUpdate = true;
+    this.dummies.push(d);
+    this.targets.push(d);
+    actor.pavise = d;
+    c.equip('back', null);
+    return true;
+  }
+
   collide(a) {
     for (const o of this.actors) {
       if (o === a || !o.alive) continue;
@@ -290,9 +324,9 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ arrows
-  spawnArrow(owner, from, dir) {
+  spawnArrow(owner, from, dir, opts = {}) {
     const lib = this.assets.styles[this.style];
-    const src = lib.statics.proj_arrow;
+    const src = lib.statics[opts.mesh || 'proj_arrow'];
     const g = new THREE.Group();
     const m = src.clone();
     m.material = owner.char.material;
@@ -300,9 +334,9 @@ export class Game {
     g.add(m);
     g.position.copy(from);
     this.scene.add(g);
-    const vel = dir.clone().multiplyScalar(30);
-    vel.y = 1.0;
-    this.arrows.push({ g, vel, t: 0, owner, stuck: false });
+    const vel = dir.clone().multiplyScalar(opts.speed || 30);
+    vel.y = opts.lift ?? 1.0;
+    this.arrows.push({ g, vel, t: 0, owner, stuck: false, dmg: opts.dmg || [16, 24] });
   }
 
   updateArrows(dt) {
@@ -324,7 +358,7 @@ export class Game {
           a.g.position.copy(p).addScaledVector(a.vel.clone().normalize(), 0.12);
           a.stuck = true;
           const dir = a.vel.clone().setY(0).normalize();
-          t.onHit(a.owner, dir, Math.round(16 + Math.random() * 8), false);
+          t.onHit(a.owner, dir, Math.round(a.dmg[0] + Math.random() * (a.dmg[1] - a.dmg[0])), false);
           const host = t.pivot || (t.char && t.char.bones.chest) || null;
           if (host) host.attach(a.g);
           break;
