@@ -224,7 +224,8 @@ export class Character {
       else if (name.startsWith('beard_')) vis = L.beard === name.slice(6) && !hidden.has('beard');
       else {
         const it = cat.items[name];
-        vis = !!it && L[it.slot] === name && !hiddenSlots.has(it.slot);
+        vis = !!it && L[it.slot] === name && !hiddenSlots.has(it.slot) &&
+          (!it.races || it.races.includes(this.race));       // race-exclusive gear (the orc's war furnace)
       }
       mesh.visible = vis;
     }

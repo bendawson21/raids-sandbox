@@ -279,13 +279,16 @@ export class Game {
       push(a.pos, o.pos, a.radius + o.radius);
     }
     for (const d of this.dummies) push(a.pos, d.pos, a.radius + d.radius);
-    const r = Math.hypot(a.pos.x, a.pos.z);
-    if (r > ARENA_R) a.pos.multiplyScalar(ARENA_R / r);
+    if (this.clampArena) this.clampArena(a.pos);          // the battle sim's pentagon
+    else {
+      const r = Math.hypot(a.pos.x, a.pos.z);
+      if (r > ARENA_R) a.pos.multiplyScalar(ARENA_R / r);
+    }
     a.pos.y = 0;
   }
 
   // ------------------------------------------------------------------ feedback
-  floater(pos, text, crit) { this.floaters.spawn(pos, text, crit); }
+  floater(pos, text, crit) { if (!this.quiet) this.floaters.spawn(pos, text, crit); }
   burst(pos, dir, kind) {
     const presets = {
       straw: [{ count: 12, color: 0xe0c46a, speed: 3.5, size: 0.07 }, { count: 4, color: 0xb8963e, speed: 2.5, size: 0.1 }],
@@ -297,7 +300,7 @@ export class Game {
     for (const p of presets[kind] || presets.hit) this.particles.burst(pos, dir, p);
   }
   dust(pos, dir) { this.burst(pos.clone().setY(0.1), dir.clone().multiplyScalar(-1), 'dust'); }
-  shake(a) { this.shakeAmt = Math.max(this.shakeAmt, a); }
+  shake(a) { if (!this.quiet) this.shakeAmt = Math.max(this.shakeAmt, a); }
   slam(pos, radius) {
     this.rings.spawn(pos, { size: radius, color: 0xfff1c0 });
     this.burst(pos.clone().setY(0.1), new THREE.Vector3(), 'dust');
@@ -306,6 +309,7 @@ export class Game {
     }
   }
   hitStop(t, ...who) {
+    if (this.quiet) return;
     this.hitStopT = Math.max(this.hitStopT, t);
     this.hitStopWho = who;
     this.shake(0.12 + t);
@@ -336,7 +340,8 @@ export class Game {
     this.scene.add(g);
     const vel = dir.clone().multiplyScalar(opts.speed || 30);
     vel.y = opts.lift ?? 1.0;
-    this.arrows.push({ g, vel, t: 0, owner, stuck: false, dmg: opts.dmg || [16, 24] });
+    const k = owner.dmgMul || 1;
+    this.arrows.push({ g, vel, t: 0, owner, stuck: false, dmg: (opts.dmg || [16, 24]).map(x => x * k) });
   }
 
   updateArrows(dt) {
@@ -352,6 +357,7 @@ export class Game {
       // hit test vs targets (vertical cylinders)
       for (const t of this.targets) {
         if (t === a.owner || !t.alive) continue;
+        if (t.faction && a.owner && t.faction === a.owner.faction && t.faction !== 'neutral') continue;
         const p = closestOnSeg(prev, a.g.position, t.pos);
         const dx = p.x - t.pos.x, dz = p.z - t.pos.z;
         if (dx * dx + dz * dz < (t.radius + 0.05) ** 2 && p.y > 0.2 && p.y < (t.height || 1.8) + 0.1) {
@@ -409,7 +415,7 @@ export class Game {
       if (e.button === 2) this.rmb = false;
     });
     el.addEventListener('auxclick', e => { if (e.button === 1) e.preventDefault(); });
-    el.addEventListener('wheel', e => { this.camDist = THREE.MathUtils.clamp(this.camDist + e.deltaY * 0.01, 7, 28); });
+    el.addEventListener('wheel', e => { this.camDist = THREE.MathUtils.clamp(this.camDist + e.deltaY * 0.01 * (this.camMax || 28) / 28, 7, this.camMax || 28); });
     this.raycaster = new THREE.Raycaster();
   }
 

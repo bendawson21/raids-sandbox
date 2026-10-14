@@ -231,7 +231,7 @@ export class Actor {
         this.hitSet.add(t);
         const dir = new THREE.Vector3(dx, 0, dz).normalize();
         const heavy = this.char.stance === '2h' || this.combo === 2;
-        const dmg = Math.round((heavy ? 24 : 14) * (0.85 + Math.random() * 0.3));
+        const dmg = Math.round((heavy ? 24 : 14) * (0.85 + Math.random() * 0.3) * (this.dmgMul || 1));
         t.onHit(this, dir, dmg, heavy || !!m.knockback);
         this.game.hitStop(heavy ? 0.09 : 0.055, this, t);
       }

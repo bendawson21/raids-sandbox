@@ -475,6 +475,22 @@
    "team_trim": "#b8a77a",
    "lip": "#c08068"
   },
+  "horde": {
+   "skin": "#b98060",
+   "skin_dark": "#966247",
+   "hair": "#1e1a1a",
+   "eye": "#1a1414",
+   "eye_white": "#efe6dc",
+   "cloth1": "#6b5a4a",
+   "cloth2": "#2f2b2b",
+   "cloth3": "#5c4a36",
+   "leather": "#5c3b29",
+   "leather_dark": "#2e1f18",
+   "team1": "#d9822b",
+   "team2": "#232323",
+   "team_trim": "#a88a4a",
+   "lip": "#8c5442"
+  },
   "noble": {
    "skin": "#7a5038",
    "skin_dark": "#5e3c2a",
@@ -818,6 +834,116 @@
    "hides_slots": [],
    "tier": 3
   },
+  "helm_great": {
+   "id": "helm_great",
+   "name": "Great Helm",
+   "slot": "helmet",
+   "hides": [
+    "hair",
+    "ears",
+    "beard"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "chest_plate": {
+   "id": "chest_plate",
+   "name": "Plate Harness",
+   "slot": "chest",
+   "hides": [
+    "torso",
+    "upperarms",
+    "forearms",
+    "hips"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "legs_plate": {
+   "id": "legs_plate",
+   "name": "Plate Legs",
+   "slot": "legs",
+   "hides": [
+    "thighs",
+    "shins"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "boots_sabatons": {
+   "id": "boots_sabatons",
+   "name": "Sabatons",
+   "slot": "boots",
+   "hides": [
+    "feet"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "helm_scrap": {
+   "id": "helm_scrap",
+   "name": "Scrap Helm",
+   "slot": "helmet",
+   "hides": [
+    "hair"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "chest_scrap": {
+   "id": "chest_scrap",
+   "name": "Scrap Armour",
+   "slot": "chest",
+   "hides": [
+    "torso",
+    "upperarms",
+    "hips"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "legs_scrap": {
+   "id": "legs_scrap",
+   "name": "Scrap Leggings",
+   "slot": "legs",
+   "hides": [
+    "thighs",
+    "shins"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "boots_scrap": {
+   "id": "boots_scrap",
+   "name": "Wrapped Boots",
+   "slot": "boots",
+   "hides": [
+    "feet"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "gloves_scrap": {
+   "id": "gloves_scrap",
+   "name": "Wraps & Bracer",
+   "slot": "gloves",
+   "hides": [
+    "hands"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "back_warpack": {
+   "id": "back_warpack",
+   "name": "War Furnace",
+   "slot": "back",
+   "hides": [],
+   "hides_slots": [],
+   "tier": 3,
+   "races": [
+    "orc"
+   ]
+  },
   "helm_nasal_steel": {
    "id": "helm_nasal_steel",
    "name": "Steel Nasal Helm",
@@ -858,6 +984,49 @@
    "slot": "gloves",
    "hides": [
     "hands"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "gloves_gauntlet_steel": {
+   "id": "gloves_gauntlet_steel",
+   "name": "Steel Gauntlets",
+   "slot": "gloves",
+   "hides": [
+    "hands"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "helm_kettle_officer": {
+   "id": "helm_kettle_officer",
+   "name": "Sergeant's Kettle Hat (plume)",
+   "slot": "helmet",
+   "hides": [
+    "hair"
+   ],
+   "hides_slots": [],
+   "tier": 2
+  },
+  "helm_nasal_officer": {
+   "id": "helm_nasal_officer",
+   "name": "Captain's Nasal Helm (crest)",
+   "slot": "helmet",
+   "hides": [
+    "hair",
+    "ears"
+   ],
+   "hides_slots": [],
+   "tier": 3
+  },
+  "helm_great_crest": {
+   "id": "helm_great_crest",
+   "name": "Knight's Great Helm (crest)",
+   "slot": "helmet",
+   "hides": [
+    "hair",
+    "ears",
+    "beard"
    ],
    "hides_slots": [],
    "tier": 3
@@ -972,6 +1141,34 @@
     1.6
    ],
    "reach": 2.3,
+   "tier": 2
+  },
+  "wpn_poleaxe": {
+   "id": "wpn_poleaxe",
+   "name": "Poleaxe",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "spear",
+   "trail": [
+    0.95,
+    1.3
+   ],
+   "reach": 1.9,
+   "tier": 3
+  },
+  "wpn_cleaver": {
+   "id": "wpn_cleaver",
+   "name": "Orc Cleaver",
+   "slot": "mainhand",
+   "hides": [],
+   "hides_slots": [],
+   "kind": "1h",
+   "trail": [
+    0.15,
+    0.62
+   ],
+   "reach": 1.15,
    "tier": 2
   },
   "wpn_falchion": {
@@ -2095,6 +2292,72 @@
    ],
    "mainhand": "wpn_sword",
    "offhand": "shield_kite"
+  },
+  "plate_knight": {
+   "palette": "knight",
+   "hair": "short",
+   "items": [
+    "helm_great",
+    "chest_plate",
+    "legs_plate",
+    "boots_sabatons",
+    "gloves_gauntlet_steel"
+   ],
+   "mainhand": "wpn_poleaxe"
+  },
+  "captain": {
+   "palette": "hero",
+   "hair": "short",
+   "items": [
+    "helm_great_crest",
+    "chest_plate",
+    "legs_plate",
+    "boots_sabatons",
+    "gloves_gauntlet_steel"
+   ],
+   "mainhand": "wpn_sword",
+   "offhand": "shield_heater"
+  },
+  "sergeant_plume": {
+   "palette": "hero",
+   "hair": "short",
+   "items": [
+    "helm_kettle_officer",
+    "chest_gambeson",
+    "legs_hose_steel",
+    "boots_wrapped",
+    "gloves_leather"
+   ],
+   "mainhand": "wpn_falchion",
+   "offhand": "shield_round"
+  },
+  "lieutenant": {
+   "palette": "knight",
+   "hair": "short",
+   "items": [
+    "helm_nasal_officer",
+    "chest_hauberk_steel",
+    "legs_chausses_steel",
+    "boots_ankle",
+    "gloves_mail_steel"
+   ],
+   "mainhand": "wpn_sword",
+   "offhand": "shield_heater"
+  },
+  "orc_brute": {
+   "palette": "bandit",
+   "hair": "mohawk",
+   "beard": "full",
+   "items": [
+    "helm_scrap",
+    "chest_scrap",
+    "legs_scrap",
+    "boots_scrap",
+    "gloves_scrap",
+    "back_warpack"
+   ],
+   "mainhand": "wpn_cleaver",
+   "offhand": "wpn_cleaver"
   },
   "hold_guard": {
    "palette": "hero",

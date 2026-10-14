@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Raids — Battle Sim</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud" style="max-width:calc(100% - 24px)">
+  <div id="loading">Loading assets…</div>
+  <div id="help">
+    <b>Battle sim</b> · five factions fight for the centre · <b>WASD</b> pan · <b>Wheel</b> zoom
+    · <b>Middle-drag</b> / <b>Q E</b> orbit · <b>R</b> reset view · <b>[ ]</b> speed · <b>P</b> pause
+    · <a href="index.html" style="color:#e3b552;pointer-events:auto">character sandbox</a>
+  </div>
+  <div id="stats"></div>
+</div>
+<div id="floaters"></div>
+<script type="module" src="js/battle.js"></script>
+</body>
+</html>
